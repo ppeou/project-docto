@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Email Item",
+  "description": "Email address item with type and primary flag",
+  "type": "object",
+  "required": ["email", "typeId"],
+  "properties": {
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Email address"
+    },
+    "typeId": {
+      "type": "integer",
+      "enum": [1, 2, 3],
+      "description": "Email type: 1=Personal, 2=Work, 3=Other"
+    },
+    "isPrimary": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is the primary email address"
+    }
+  }
+}
+

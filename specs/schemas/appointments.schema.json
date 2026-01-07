@@ -1,0 +1,126 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Doctor Appointment",
+  "description": "Appointment document schema",
+  "type": "object",
+  "required": [
+    "id",
+    "itineraryId",
+    "title",
+    "doctor",
+    "appointmentDate",
+    "status",
+    "created"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique appointment identifier"
+    },
+    "itineraryId": {
+      "type": "string",
+      "description": "Reference to parent itinerary"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "Appointment title (e.g., 'Annual Checkup', 'Cardiologist Visit')"
+    },
+    "doctor": {
+      "$ref": "common/doctor.schema.json",
+      "description": "Doctor information"
+    },
+    "clinicName": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Name of clinic/hospital"
+    },
+    "clinicAddress": {
+      "$ref": "common/address.schema.json",
+      "description": "Clinic address"
+    },
+    "appointmentDate": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Appointment date and time"
+    },
+    "duration": {
+      "type": "integer",
+      "minimum": 5,
+      "maximum": 480,
+      "default": 30,
+      "description": "Appointment duration in minutes"
+    },
+    "purpose": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Purpose of appointment (e.g., 'Follow-up', 'New patient', 'Test results')"
+    },
+    "status": {
+      "type": "integer",
+      "enum": [1, 2, 3, 4],
+      "default": 1,
+      "description": "Status: 1=scheduled, 2=completed, 3=cancelled, 4=rescheduled"
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 2000,
+      "description": "Pre-appointment notes"
+    },
+    "reminder": {
+      "type": "object",
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether reminder is enabled"
+        },
+        "minutesBefore": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 10080,
+          "default": 1440,
+          "description": "Minutes before appointment to send reminder (e.g., 1440 = 24 hours)"
+        }
+      }
+    },
+    "created": {
+      "type": "object",
+      "required": ["by", "on"],
+      "properties": {
+        "by": {
+          "type": "string",
+          "description": "User ID of creator"
+        },
+        "on": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        }
+      }
+    },
+    "updated": {
+      "type": "object",
+      "required": ["by", "on"],
+      "properties": {
+        "by": {
+          "type": "string",
+          "description": "User ID of last updater"
+        },
+        "on": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp"
+        }
+      }
+    },
+    "isDeleted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Soft delete flag"
+    }
+  }
+}
+

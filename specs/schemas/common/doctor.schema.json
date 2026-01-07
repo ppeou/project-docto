@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Doctor",
+  "description": "Doctor information schema",
+  "type": "object",
+  "required": ["name"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Doctor's full name"
+    },
+    "specialty": {
+      "type": "string",
+      "maxLength": 100,
+      "description": "Doctor's specialty (e.g., 'Cardiology', 'General Practice')"
+    },
+    "phones": {
+      "type": "array",
+      "items": {
+        "$ref": "phone-item.schema.json"
+      },
+      "description": "Array of doctor phone numbers"
+    },
+    "emails": {
+      "type": "array",
+      "items": {
+        "$ref": "email-item.schema.json"
+      },
+      "description": "Array of doctor email addresses"
+    },
+    "websites": {
+      "type": "array",
+      "items": {
+        "$ref": "website-item.schema.json"
+      },
+      "description": "Array of doctor website URLs"
+    }
+  }
+}
+

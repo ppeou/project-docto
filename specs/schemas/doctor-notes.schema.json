@@ -1,0 +1,105 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Doctor Note",
+  "description": "Doctor note document schema",
+  "type": "object",
+  "required": [
+    "id",
+    "appointmentId",
+    "itineraryId",
+    "content",
+    "noteType",
+    "created"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique note identifier"
+    },
+    "appointmentId": {
+      "type": "string",
+      "description": "Reference to appointment this note belongs to"
+    },
+    "itineraryId": {
+      "type": "string",
+      "description": "Reference to parent itinerary"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Optional note title (e.g., 'Test Results', 'Treatment Plan')"
+    },
+    "content": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 10000,
+      "description": "Note content (can include formatted text)"
+    },
+    "noteType": {
+      "type": "integer",
+      "enum": [1, 2, 3, 4, 5],
+      "description": "Note type: 1=general notes, 2=test results, 3=treatment plan, 4=diagnosis, 5=other"
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "url", "type"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "File name"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "File URL (stored in Firebase Storage)"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["pdf", "image", "document"],
+            "description": "File type"
+          }
+        }
+      },
+      "description": "Optional file attachments"
+    },
+    "created": {
+      "type": "object",
+      "required": ["by", "on"],
+      "properties": {
+        "by": {
+          "type": "string",
+          "description": "User ID of creator"
+        },
+        "on": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        }
+      }
+    },
+    "updated": {
+      "type": "object",
+      "required": ["by", "on"],
+      "properties": {
+        "by": {
+          "type": "string",
+          "description": "User ID of last updater"
+        },
+        "on": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp"
+        }
+      }
+    },
+    "isDeleted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Soft delete flag"
+    }
+  }
+}
+

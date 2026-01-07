@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Itinerary Share",
+  "description": "Itinerary sharing document schema",
+  "type": "object",
+  "required": ["id", "itineraryId", "sharedBy", "sharedWith", "accessLevel", "created"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique share identifier"
+    },
+    "itineraryId": {
+      "type": "string",
+      "description": "Reference to itinerary being shared"
+    },
+    "sharedBy": {
+      "type": "string",
+      "description": "User ID of person sharing the itinerary"
+    },
+    "sharedWith": {
+      "type": "string",
+      "description": "User ID of person with whom itinerary is shared"
+    },
+    "accessLevel": {
+      "type": "integer",
+      "enum": [1, 2],
+      "description": "Access level: 1=viewer (read-only), 2=collaborator (read-write)"
+    },
+    "created": {
+      "type": "object",
+      "required": ["by", "on"],
+      "properties": {
+        "by": {
+          "type": "string",
+          "description": "User ID of creator"
+        },
+        "on": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        }
+      }
+    },
+    "isDeleted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Soft delete flag"
+    }
+  }
+}
+

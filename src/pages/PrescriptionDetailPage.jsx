@@ -1,0 +1,268 @@
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { getPrescription, updatePrescription, deletePrescription } from '@/services/firestore';
+import { usePrescription } from '@/hooks/usePrescription';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { ErrorMessage } from '@/components/shared/ErrorMessage';
+import { useToast } from '@/components/ui/use-toast';
+import { ArrowLeft, Edit, Trash2, Pill, Calendar, Phone, User } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
+
+export default function PrescriptionDetailPage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { prescription, loading, error } = usePrescription(id);
+
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this prescription?')) return;
+
+    try {
+      await deletePrescription(id);
+      toast({
+        title: 'Success',
+        description: 'Prescription deleted successfully',
+      });
+      navigate('/itineraries');
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to delete prescription',
+      });
+    }
+  };
+
+  const handleStatusChange = async (newStatus) => {
+    try {
+      await updatePrescription(id, { status: newStatus });
+      toast({
+        title: 'Success',
+        description: 'Prescription status updated',
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to update status',
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen p-4">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (error || !prescription) {
+    return (
+      <div className="min-h-screen p-4">
+        <ErrorMessage error={error || new Error('Prescription not found')} />
+      </div>
+    );
+  }
+
+  const statusLabels = {
+    1: 'Active',
+    2: 'Completed',
+    3: 'Discontinued',
+  };
+
+  const statusColors = {
+    1: 'success',
+    2: 'default',
+    3: 'destructive',
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
+      <div className="bg-white border-b sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-4">
+          <Link to={prescription.itineraryId ? `/itineraries/${prescription.itineraryId}` : '/itineraries'}>
+            <Button variant="ghost" className="mb-4">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+          </Link>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold">{prescription.medicationName}</h1>
+              {prescription.genericName && (
+                <p className="text-muted-foreground mt-1">Generic: {prescription.genericName}</p>
+              )}
+              <Badge variant={statusColors[prescription.status]} className="mt-2">
+                {statusLabels[prescription.status]}
+              </Badge>
+            </div>
+            <div className="flex gap-2">
+              <Link to={`/prescriptions/${id}/edit`}>
+                <Button variant="outline">
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit
+                </Button>
+              </Link>
+              <Button variant="destructive" onClick={handleDelete}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Medication Details */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Medication Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <p className="text-sm text-muted-foreground">Dosage</p>
+                <p className="font-medium">{prescription.dosage}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Frequency</p>
+                <p className="font-medium">{prescription.frequency}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Quantity</p>
+                <p className="font-medium">{prescription.quantity}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Prescription Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Prescription Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <p className="text-sm text-muted-foreground">Prescribed By</p>
+                <p className="font-medium">{prescription.prescribedBy?.name || 'Not specified'}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Date Prescribed</p>
+                  <p className="font-medium">
+                    {prescription.datePrescribed ? formatDate(prescription.datePrescribed) : 'Not specified'}
+                  </p>
+                </div>
+              </div>
+              {prescription.nextRefillDate && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Next Refill Date</p>
+                  <p className="font-medium">{formatDate(prescription.nextRefillDate)}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Refill Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Refill Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {prescription.refills && (
+                <>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Remaining Refills</p>
+                    <p className="font-medium text-2xl">{prescription.refills.remaining}</p>
+                    <p className="text-sm text-muted-foreground">out of {prescription.refills.total}</p>
+                  </div>
+                  {prescription.refills.remaining > 0 && prescription.nextRefillDate && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Next Refill</p>
+                      <p className="font-medium">{formatDate(prescription.nextRefillDate)}</p>
+                    </div>
+                  )}
+                </>
+              )}
+              {prescription.refillReminder?.enabled && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Reminder</p>
+                  <p className="font-medium">
+                    {prescription.refillReminder.daysBefore} days before refill date
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Pharmacy Information */}
+          {(prescription.pharmacyName || prescription.pharmacyPhone) && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Pharmacy</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {prescription.pharmacyName && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Name</p>
+                    <p className="font-medium">{prescription.pharmacyName}</p>
+                  </div>
+                )}
+                {prescription.pharmacyPhone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <a href={`tel:${prescription.pharmacyPhone}`} className="text-primary hover:underline">
+                      {prescription.pharmacyPhone}
+                    </a>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Instructions */}
+          {prescription.instructions && (
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>Special Instructions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm whitespace-pre-wrap">{prescription.instructions}</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Actions */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {prescription.status === 1 && (
+                <Button onClick={() => handleStatusChange(2)} variant="outline">
+                  Mark as Completed
+                </Button>
+              )}
+              {prescription.status === 1 && (
+                <Button onClick={() => handleStatusChange(3)} variant="outline">
+                  Mark as Discontinued
+                </Button>
+              )}
+              {prescription.status !== 1 && (
+                <Button onClick={() => handleStatusChange(1)} variant="outline">
+                  Mark as Active
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+

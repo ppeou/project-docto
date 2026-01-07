@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Phone Item",
+  "description": "Phone number item with type and primary flag",
+  "type": "object",
+  "required": ["phone", "typeId"],
+  "properties": {
+    "phone": {
+      "type": "string",
+      "pattern": "^\\+[1-9]\\d{1,14}$",
+      "description": "Phone number in E.164 format"
+    },
+    "typeId": {
+      "type": "integer",
+      "enum": [1, 2, 3, 4, 5],
+      "description": "Phone type: 1=Mobile, 2=Home, 3=Work, 4=Fax, 5=Other"
+    },
+    "isPrimary": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is the primary phone number"
+    }
+  }
+}
+

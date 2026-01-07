@@ -1,0 +1,143 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Enumerations",
+  "description": "Enumeration definitions used across schemas",
+  "type": "object",
+  "properties": {
+    "accessLevel": {
+      "type": "object",
+      "properties": {
+        "1": {
+          "type": "string",
+          "const": "viewer"
+        },
+        "2": {
+          "type": "string",
+          "const": "collaborator"
+        }
+      }
+    },
+    "appointmentStatus": {
+      "type": "object",
+      "properties": {
+        "1": {
+          "type": "string",
+          "const": "scheduled"
+        },
+        "2": {
+          "type": "string",
+          "const": "completed"
+        },
+        "3": {
+          "type": "string",
+          "const": "cancelled"
+        },
+        "4": {
+          "type": "string",
+          "const": "rescheduled"
+        }
+      }
+    },
+    "prescriptionStatus": {
+      "type": "object",
+      "properties": {
+        "1": {
+          "type": "string",
+          "const": "active"
+        },
+        "2": {
+          "type": "string",
+          "const": "completed"
+        },
+        "3": {
+          "type": "string",
+          "const": "discontinued"
+        }
+      }
+    },
+    "noteType": {
+      "type": "object",
+      "properties": {
+        "1": {
+          "type": "string",
+          "const": "general notes"
+        },
+        "2": {
+          "type": "string",
+          "const": "test results"
+        },
+        "3": {
+          "type": "string",
+          "const": "treatment plan"
+        },
+        "4": {
+          "type": "string",
+          "const": "diagnosis"
+        },
+        "5": {
+          "type": "string",
+          "const": "other"
+        }
+      }
+    },
+    "invitationStatus": {
+      "type": "object",
+      "properties": {
+        "0": {
+          "type": "string",
+          "const": "pending"
+        },
+        "1": {
+          "type": "string",
+          "const": "accepted"
+        },
+        "-1": {
+          "type": "string",
+          "const": "rejected"
+        },
+        "-2": {
+          "type": "string",
+          "const": "cancelled"
+        },
+        "-3": {
+          "type": "string",
+          "const": "expired"
+        }
+      }
+    },
+    "patientRelation": {
+      "type": "object",
+      "properties": {
+        "Self": {
+          "type": "string",
+          "const": "Self"
+        },
+        "Mother": {
+          "type": "string",
+          "const": "Mother"
+        },
+        "Father": {
+          "type": "string",
+          "const": "Father"
+        },
+        "Spouse": {
+          "type": "string",
+          "const": "Spouse"
+        },
+        "Child": {
+          "type": "string",
+          "const": "Child"
+        },
+        "Sibling": {
+          "type": "string",
+          "const": "Sibling"
+        },
+        "Other": {
+          "type": "string",
+          "const": "Other"
+        }
+      }
+    }
+  }
+}
+

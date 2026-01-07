@@ -1,0 +1,166 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Prescription",
+  "description": "Prescription document schema",
+  "type": "object",
+  "required": [
+    "id",
+    "itineraryId",
+    "medicationName",
+    "dosage",
+    "frequency",
+    "quantity",
+    "prescribedBy",
+    "datePrescribed",
+    "refills",
+    "status",
+    "created"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique prescription identifier"
+    },
+    "itineraryId": {
+      "type": "string",
+      "description": "Reference to parent itinerary"
+    },
+    "appointmentId": {
+      "type": "string",
+      "description": "Reference to appointment where prescribed (optional)"
+    },
+    "medicationName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "Brand name of medication"
+    },
+    "genericName": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Generic name of medication"
+    },
+    "dosage": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 50,
+      "description": "Dosage information (e.g., '10mg', '1 tablet')"
+    },
+    "frequency": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Frequency of administration (e.g., 'Twice daily', 'Once a week', 'As needed')"
+    },
+    "quantity": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Quantity prescribed (e.g., 30 tablets)"
+    },
+    "prescribedBy": {
+      "$ref": "common/doctor.schema.json",
+      "description": "Prescribing doctor information"
+    },
+    "pharmacyName": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Name of pharmacy"
+    },
+    "pharmacyPhone": {
+      "type": "string",
+      "pattern": "^\\+[1-9]\\d{1,14}$",
+      "description": "Pharmacy phone number in E.164 format"
+    },
+    "datePrescribed": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date prescription was issued"
+    },
+    "refills": {
+      "type": "object",
+      "required": ["remaining", "total"],
+      "properties": {
+        "remaining": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of refills remaining"
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of refills prescribed"
+        }
+      }
+    },
+    "nextRefillDate": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date when next refill is needed (calculated based on quantity and frequency)"
+    },
+    "refillReminder": {
+      "type": "object",
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether refill reminder is enabled"
+        },
+        "daysBefore": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30,
+          "default": 7,
+          "description": "Days before refill date to send reminder"
+        }
+      }
+    },
+    "instructions": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Special instructions (e.g., 'Take with food', 'Avoid alcohol')"
+    },
+    "status": {
+      "type": "integer",
+      "enum": [1, 2, 3],
+      "default": 1,
+      "description": "Status: 1=active, 2=completed, 3=discontinued"
+    },
+    "created": {
+      "type": "object",
+      "required": ["by", "on"],
+      "properties": {
+        "by": {
+          "type": "string",
+          "description": "User ID of creator"
+        },
+        "on": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        }
+      }
+    },
+    "updated": {
+      "type": "object",
+      "required": ["by", "on"],
+      "properties": {
+        "by": {
+          "type": "string",
+          "description": "User ID of last updater"
+        },
+        "on": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp"
+        }
+      }
+    },
+    "isDeleted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Soft delete flag"
+    }
+  }
+}
+

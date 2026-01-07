@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Healthcare Itinerary",
+  "description": "Healthcare itinerary document schema",
+  "type": "object",
+  "required": ["id", "name", "patient", "created"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique itinerary identifier"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Itinerary name (e.g., 'Mom's Healthcare - 2024')"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional itinerary description"
+    },
+    "startDate": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Itinerary start date (optional)"
+    },
+    "endDate": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Itinerary end date (optional)"
+    },
+    "patient": {
+      "$ref": "common/patient.schema.json",
+      "description": "Patient information"
+    },
+    "created": {
+      "type": "object",
+      "required": ["by", "on"],
+      "properties": {
+        "by": {
+          "type": "string",
+          "description": "User ID of creator"
+        },
+        "on": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        }
+      }
+    },
+    "updated": {
+      "type": "object",
+      "required": ["by", "on"],
+      "properties": {
+        "by": {
+          "type": "string",
+          "description": "User ID of last updater"
+        },
+        "on": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp"
+        }
+      }
+    },
+    "isDeleted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Soft delete flag"
+    }
+  }
+}
+

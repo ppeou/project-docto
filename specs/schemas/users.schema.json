@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "User",
+  "description": "User profile document schema",
+  "type": "object",
+  "required": ["id", "email", "created", "updated"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Firebase Auth UID"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "User email address"
+    },
+    "phone": {
+      "type": "string",
+      "pattern": "^\\+[1-9]\\d{1,14}$",
+      "description": "Phone number in E.164 format (optional)"
+    },
+    "displayName": {
+      "type": "string",
+      "maxLength": 100,
+      "description": "User display name"
+    },
+    "photo": {
+      "type": "string",
+      "format": "uri",
+      "description": "Profile photo URL (optional)"
+    },
+    "created": {
+      "type": "object",
+      "required": ["on"],
+      "properties": {
+        "on": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        }
+      }
+    },
+    "updated": {
+      "type": "object",
+      "required": ["on"],
+      "properties": {
+        "on": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp"
+        }
+      }
+    }
+  }
+}
+

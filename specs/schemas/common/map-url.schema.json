@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Map URL",
+  "description": "Map URL item with map type",
+  "type": "object",
+  "required": ["url", "mapType"],
+  "properties": {
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Map URL"
+    },
+    "mapType": {
+      "type": "string",
+      "enum": ["Google Maps", "Apple Maps", "Waze", "Bing Maps", "OpenStreetMap", "Other"],
+      "description": "Type of map service"
+    }
+  }
+}
+

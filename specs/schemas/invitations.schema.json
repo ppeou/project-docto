@@ -1,0 +1,113 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Itinerary Invitation",
+  "description": "Invitation document schema for sharing itineraries",
+  "type": "object",
+  "required": [
+    "id",
+    "itineraryId",
+    "invitedBy",
+    "inviteeIdentifier",
+    "inviteeType",
+    "accessLevel",
+    "status",
+    "created"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique invitation identifier"
+    },
+    "itineraryId": {
+      "type": "string",
+      "description": "Reference to itinerary being shared"
+    },
+    "invitedBy": {
+      "type": "string",
+      "description": "User ID of person sending invitation"
+    },
+    "inviteeIdentifier": {
+      "type": "string",
+      "description": "Email address or phone number of invitee (format depends on inviteeType)"
+    },
+    "inviteeType": {
+      "type": "integer",
+      "enum": [1, 2],
+      "description": "Invitee identifier type: 1=email, 2=phone"
+    },
+    "accessLevel": {
+      "type": "integer",
+      "enum": [1, 2],
+      "default": 1,
+      "description": "Access level: 1=viewer (read-only), 2=collaborator (read-write)"
+    },
+    "status": {
+      "type": "integer",
+      "enum": [0, 1, -1, -2, -3],
+      "default": 0,
+      "description": "Status: 0=pending, 1=accepted, -1=rejected, -2=cancelled, -3=expired"
+    },
+    "created": {
+      "type": "object",
+      "required": ["by", "on"],
+      "properties": {
+        "by": {
+          "type": "string",
+          "description": "User ID of creator"
+        },
+        "on": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        }
+      }
+    },
+    "respondedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when invitee responded (accepted/rejected)"
+    },
+    "expiresAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Invitation expiration date (default: 7 days from creation)"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "inviteeType": {
+            "const": 1
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "inviteeIdentifier": {
+            "type": "string",
+            "format": "email"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "inviteeType": {
+            "const": 2
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "inviteeIdentifier": {
+            "type": "string",
+            "pattern": "^\\+[1-9]\\d{1,14}$"
+          }
+        }
+      }
+    }
+  ]
+}
+

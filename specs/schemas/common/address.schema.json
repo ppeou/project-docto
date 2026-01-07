@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Address",
+  "description": "Address information schema",
+  "type": "object",
+  "properties": {
+    "street": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Street address"
+    },
+    "street2": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Street address line 2 (apartment, suite, etc.)"
+    },
+    "city": {
+      "type": "string",
+      "maxLength": 100,
+      "description": "City"
+    },
+    "state": {
+      "type": "string",
+      "maxLength": 100,
+      "description": "State or province"
+    },
+    "postalCode": {
+      "type": "string",
+      "maxLength": 20,
+      "description": "Postal or ZIP code"
+    },
+    "country": {
+      "type": "string",
+      "maxLength": 100,
+      "description": "Country"
+    },
+    "mapUrls": {
+      "type": "array",
+      "items": {
+        "$ref": "map-url.schema.json"
+      },
+      "description": "Array of map URLs (Google Maps, Apple Maps, Waze, etc.)"
+    }
+  }
+}
+

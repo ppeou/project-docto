@@ -1,0 +1,33 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="128" fill="#667eea"/>
+  <g transform="translate(256, 256)">
+    <!-- Stethoscope head -->
+    <circle cx="0" cy="-60" r="45" fill="white" opacity="0.95"/>
+    <circle cx="0" cy="-60" r="35" fill="#667eea"/>
+    
+    <!-- Stethoscope tube -->
+    <path d="M 0 -15 Q -40 -15 -60 -35 Q -80 -55 -80 -85 Q -80 -115 -60 -135 Q -40 -155 0 -155" 
+          stroke="white" 
+          stroke-width="20" 
+          fill="none" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"/>
+    
+    <!-- Stethoscope earpieces -->
+    <circle cx="-100" cy="-155" r="18" fill="white" opacity="0.95"/>
+    <circle cx="-100" cy="-155" r="12" fill="#667eea"/>
+    <circle cx="100" cy="-155" r="18" fill="white" opacity="0.95"/>
+    <circle cx="100" cy="-155" r="12" fill="#667eea"/>
+    
+    <!-- Connecting tube between earpieces -->
+    <path d="M -82 -155 L 82 -155" 
+          stroke="white" 
+          stroke-width="20" 
+          stroke-linecap="round"/>
+    
+    <!-- Medical cross in the center -->
+    <rect x="-12" y="-40" width="24" height="8" rx="4" fill="white" opacity="0.95"/>
+    <rect x="-12" y="-40" width="8" height="24" rx="4" fill="white" opacity="0.95"/>
+  </g>
+</svg>
+

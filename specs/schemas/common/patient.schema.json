@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Patient",
+  "description": "Patient information schema",
+  "type": "object",
+  "required": ["name", "relation"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Name of person receiving healthcare"
+    },
+    "relation": {
+      "type": "string",
+      "enum": ["Self", "Mother", "Father", "Spouse", "Child", "Sibling", "Other"],
+      "description": "Relationship to the user managing the itinerary"
+    },
+    "phones": {
+      "type": "array",
+      "items": {
+        "$ref": "phone-item.schema.json"
+      },
+      "description": "Array of patient phone numbers"
+    },
+    "emails": {
+      "type": "array",
+      "items": {
+        "$ref": "email-item.schema.json"
+      },
+      "description": "Array of patient email addresses"
+    },
+    "websites": {
+      "type": "array",
+      "items": {
+        "$ref": "website-item.schema.json"
+      },
+      "description": "Array of patient website URLs"
+    },
+    "addresses": {
+      "type": "array",
+      "items": {
+        "allOf": [
+          {
+            "$ref": "address.schema.json"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "typeId": {
+                "type": "integer",
+                "enum": [1, 2, 3, 4, 5],
+                "description": "Address type: 1=Home, 2=Work, 3=Other, 4=Mailing, 5=Billing"
+              },
+              "isPrimary": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether this is the primary address"
+              }
+            }
+          }
+        ]
+      },
+      "description": "Array of patient addresses"
+    }
+  }
+}
+
