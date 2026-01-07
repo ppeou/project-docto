@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { createPrescription } from '@/services/firestore';
 import { useItinerary } from '@/hooks/useItinerary';
+import { usePatients } from '@/hooks/usePatients';
+import { useDoctors } from '@/hooks/useDoctors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,20 +23,26 @@ export default function CreatePrescriptionPage() {
   const [searchParams] = useSearchParams();
   const itineraryId = searchParams.get('itineraryId');
   const appointmentId = searchParams.get('appointmentId');
+  const patientIdParam = searchParams.get('patientId');
   const { itinerary } = useItinerary(itineraryId);
+  const { patients, loading: patientsLoading } = usePatients();
+  const { doctors, loading: doctorsLoading } = useDoctors();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     itineraryId: itineraryId || '',
     appointmentId: appointmentId || '',
+    patientId: '',
     medicationName: '',
     genericName: '',
     dosage: '',
     frequency: '',
     quantity: '30',
-    prescribedBy: '',
+    doctorId: '',
     pharmacyName: '',
     pharmacyPhone: '',
+    rxNumber: '',
+    corpNumber: '',
     datePrescribed: '',
     refillsTotal: '0',
     refillsRemaining: '0',
@@ -52,26 +60,67 @@ export default function CreatePrescriptionPage() {
     if (appointmentId && !formData.appointmentId) {
       setFormData(prev => ({ ...prev, appointmentId }));
     }
-  }, [itineraryId, appointmentId]);
+    // Auto-select patient from URL parameter if available
+    if (patientIdParam && !formData.patientId) {
+      setFormData(prev => ({ ...prev, patientId: patientIdParam }));
+    }
+    // Auto-select patient from itinerary if available (fallback)
+    else if (itinerary?.patient && !formData.patientId && patients.length > 0) {
+      const matchingPatient = patients.find(
+        p => p.name === itinerary.patient?.name && p.relation === itinerary.patient?.relation
+      );
+      if (matchingPatient) {
+        setFormData(prev => ({ ...prev, patientId: matchingPatient.id }));
+      }
+    }
+  }, [itineraryId, appointmentId, patientIdParam, itinerary, patients]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!formData.patientId) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Please select a patient',
+      });
+      return;
+    }
+
+    if (!formData.doctorId) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Please select a doctor',
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
+      const selectedDoctor = doctors.find(d => d.id === formData.doctorId);
+      if (!selectedDoctor) {
+        throw new Error('Selected doctor not found');
+      }
+
       const prescriptionData = {
         itineraryId: formData.itineraryId,
         appointmentId: formData.appointmentId || undefined,
+        patientId: formData.patientId,
         medicationName: formData.medicationName,
         genericName: formData.genericName || undefined,
         dosage: formData.dosage,
         frequency: formData.frequency,
         quantity: parseInt(formData.quantity, 10),
         prescribedBy: {
-          name: formData.prescribedBy,
+          name: selectedDoctor.name,
+          specialty: selectedDoctor.specialty || undefined,
         },
         pharmacyName: formData.pharmacyName || undefined,
         pharmacyPhone: formData.pharmacyPhone || undefined,
+        rxNumber: formData.rxNumber || undefined,
+        corpNumber: formData.corpNumber || undefined,
         datePrescribed: new Date(formData.datePrescribed).toISOString(),
         refills: {
           total: parseInt(formData.refillsTotal, 10),
@@ -126,91 +175,129 @@ export default function CreatePrescriptionPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              {/* Patient Selection */}
+              <div className="space-y-4 border-b pb-4">
+                <h3 className="font-semibold">Patient Information</h3>
                 <div className="space-y-2">
-                  <Label htmlFor="medicationName">Medication Name *</Label>
-                  <Input
-                    id="medicationName"
-                    value={formData.medicationName}
-                    onChange={(e) => setFormData({ ...formData, medicationName: e.target.value })}
-                    placeholder="e.g., Aspirin"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="genericName">Generic Name</Label>
-                  <Input
-                    id="genericName"
-                    value={formData.genericName}
-                    onChange={(e) => setFormData({ ...formData, genericName: e.target.value })}
-                    placeholder="e.g., Acetylsalicylic acid"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="dosage">Dosage *</Label>
-                  <Input
-                    id="dosage"
-                    value={formData.dosage}
-                    onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
-                    placeholder="e.g., 10mg, 1 tablet"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="frequency">Frequency *</Label>
-                  <Input
-                    id="frequency"
-                    value={formData.frequency}
-                    onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
-                    placeholder="e.g., Twice daily"
-                    required
-                  />
+                  <Label htmlFor="patientId">Patient *</Label>
+                  <Select
+                    value={formData.patientId}
+                    onValueChange={(value) => setFormData({ ...formData, patientId: value })}
+                    disabled={patientsLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={patientsLoading ? "Loading patients..." : "Select a patient"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {patients.length === 0 ? (
+                        <SelectItem value="no-patients" disabled>
+                          No patients found. Please add a patient first.
+                        </SelectItem>
+                      ) : (
+                        patients.map((patient) => (
+                          <SelectItem key={patient.id} value={patient.id}>
+                            {patient.name} ({patient.relation})
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {patients.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      <Link to="/patients" className="text-primary hover:underline">
+                        Add a patient
+                      </Link>
+                      {' '}to create a prescription
+                    </p>
+                  )}
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="prescribedBy">Prescribed By (Doctor Name) *</Label>
-                <Input
-                  id="prescribedBy"
-                  value={formData.prescribedBy}
-                  onChange={(e) => setFormData({ ...formData, prescribedBy: e.target.value })}
-                  placeholder="Dr. John Smith"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="quantity">Quantity *</Label>
-                  <Input
-                    id="quantity"
-                    type="number"
-                    min="1"
-                    value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="datePrescribed">Date Prescribed *</Label>
-                  <Input
-                    id="datePrescribed"
-                    type="date"
-                    value={formData.datePrescribed}
-                    onChange={(e) => setFormData({ ...formData, datePrescribed: e.target.value })}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-4 border-t pt-4">
-                <h3 className="font-semibold">Refill Information</h3>
+              {/* Prescription Information */}
+              <div className="space-y-4 border-b pb-4">
+                <h3 className="font-semibold">Prescription Information</h3>
+                
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="refillsTotal">Total Refills</Label>
+                    <Label htmlFor="medicationName">Drug Name *</Label>
+                    <Input
+                      id="medicationName"
+                      value={formData.medicationName}
+                      onChange={(e) => setFormData({ ...formData, medicationName: e.target.value })}
+                      placeholder="e.g., Aspirin"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="genericName">Generic Name</Label>
+                    <Input
+                      id="genericName"
+                      value={formData.genericName}
+                      onChange={(e) => setFormData({ ...formData, genericName: e.target.value })}
+                      placeholder="e.g., Acetylsalicylic acid"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="dosage">Dose *</Label>
+                    <Input
+                      id="dosage"
+                      value={formData.dosage}
+                      onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
+                      placeholder="e.g., 10mg, 1 tablet"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="frequency">Intake Frequency *</Label>
+                    <Input
+                      id="frequency"
+                      value={formData.frequency}
+                      onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
+                      placeholder="e.g., Twice daily, Once a week"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="doctorId">Prescribed By Doctor *</Label>
+                    <Select
+                      value={formData.doctorId}
+                      onValueChange={(value) => setFormData({ ...formData, doctorId: value })}
+                      disabled={doctorsLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={doctorsLoading ? "Loading doctors..." : "Select a doctor"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {doctors.length === 0 ? (
+                          <SelectItem value="no-doctors" disabled>
+                            No doctors found. Please add a doctor first.
+                          </SelectItem>
+                        ) : (
+                          doctors.map((doctor) => (
+                            <SelectItem key={doctor.id} value={doctor.id}>
+                              {doctor.name} {doctor.specialty && `- ${doctor.specialty}`}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {doctors.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        <Link to="/doctors" className="text-primary hover:underline">
+                          Add a doctor
+                        </Link>
+                        {' '}to continue
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="refillsTotal">Refill Many Times? *</Label>
                     <Input
                       id="refillsTotal"
                       type="number"
@@ -224,19 +311,69 @@ export default function CreatePrescriptionPage() {
                           refillsRemaining: prev.refillsRemaining > total ? total : prev.refillsRemaining,
                         }));
                       }}
+                      placeholder="Number of refills allowed"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="rxNumber">RX Number</Label>
+                    <Input
+                      id="rxNumber"
+                      value={formData.rxNumber}
+                      onChange={(e) => setFormData({ ...formData, rxNumber: e.target.value })}
+                      placeholder="Prescription number from pharmacy"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="refillsRemaining">Remaining Refills</Label>
+                    <Label htmlFor="corpNumber">CORP #</Label>
                     <Input
-                      id="refillsRemaining"
-                      type="number"
-                      min="0"
-                      max={formData.refillsTotal}
-                      value={formData.refillsRemaining}
-                      onChange={(e) => setFormData({ ...formData, refillsRemaining: e.target.value })}
+                      id="corpNumber"
+                      value={formData.corpNumber}
+                      onChange={(e) => setFormData({ ...formData, corpNumber: e.target.value })}
+                      placeholder="Corporate/Group number"
                     />
                   </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 border-b pb-4">
+                <h3 className="font-semibold">Additional Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="quantity">Quantity *</Label>
+                    <Input
+                      id="quantity"
+                      type="number"
+                      min="1"
+                      value={formData.quantity}
+                      onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="datePrescribed">Date Prescribed *</Label>
+                    <Input
+                      id="datePrescribed"
+                      type="date"
+                      value={formData.datePrescribed}
+                      onChange={(e) => setFormData({ ...formData, datePrescribed: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="refillsRemaining">Remaining Refills</Label>
+                  <Input
+                    id="refillsRemaining"
+                    type="number"
+                    min="0"
+                    max={formData.refillsTotal}
+                    value={formData.refillsRemaining}
+                    onChange={(e) => setFormData({ ...formData, refillsRemaining: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="nextRefillDate">Next Refill Date</Label>

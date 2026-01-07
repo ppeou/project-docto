@@ -211,6 +211,18 @@ export default function PrescriptionDetailPage() {
                   <p className="font-medium">{formatDate(prescription.nextRefillDate)}</p>
                 </div>
               )}
+              {prescription.rxNumber && (
+                <div>
+                  <p className="text-sm text-muted-foreground">RX Number</p>
+                  <p className="font-medium">{prescription.rxNumber}</p>
+                </div>
+              )}
+              {prescription.corpNumber && (
+                <div>
+                  <p className="text-sm text-muted-foreground">CORP #</p>
+                  <p className="font-medium">{prescription.corpNumber}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

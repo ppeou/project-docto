@@ -1,125 +1,90 @@
 import { useState } from 'react';
 import { useDoctors } from '@/hooks/useDoctors';
 import { createDoctor, updateDoctor, deleteDoctor } from '@/services/firestore';
+import { useEntityCRUD } from '@/hooks/useEntityCRUD';
+import { useEntityDialog } from '@/hooks/useEntityDialog';
+import { useSearch } from '@/hooks/useSearch';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
-import { EmptyState } from '@/components/shared/EmptyState';
-import { useToast } from '@/components/ui/use-toast';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ContactForm } from '@/components/forms/ContactForm';
-import { Plus, Search, Edit, Trash2, Phone, Mail, Globe } from 'lucide-react';
+import { Edit, Trash2, Phone, Mail, Globe, Search, Plus } from 'lucide-react';
 import { AppHeader } from '@/components/shared/AppHeader';
+import { useToast } from '@/components/ui/use-toast';
+
+const getInitialFormData = (doctor = null) => {
+  // Handle both old format (specialty string) and new format (specialties array)
+  const specialties = doctor?.specialties || (doctor?.specialty ? [doctor.specialty] : []);
+  return {
+    name: doctor?.name || '',
+    specialty: doctor?.specialty || '',
+    specialties: specialties,
+    phones: doctor?.phones || [],
+    emails: doctor?.emails || [],
+    websites: doctor?.websites || [],
+  };
+};
 
 export default function DoctorsPage() {
   const { doctors, loading } = useDoctors();
   const { toast } = useToast();
-  
-  const [searchQuery, setSearchQuery] = useState('');
-  const [editingDoctor, setEditingDoctor] = useState(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [formData, setFormData] = useState(() => getInitialFormData());
 
-  const [doctorForm, setDoctorForm] = useState({
-    name: '',
-    specialty: '',
-    phones: [],
-    emails: [],
-    websites: [],
+  const { searchQuery, setSearchQuery, filteredItems: filteredDoctors } = useSearch(doctors, ['name', 'specialty']);
+
+  const { isOpen, editingEntity, open, close, openForEdit } = useEntityDialog(() => {
+    setFormData(getInitialFormData());
   });
 
-  const filteredDoctors = doctors.filter((doctor) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return doctor.name?.toLowerCase().includes(query) ||
-           doctor.specialty?.toLowerCase().includes(query);
-  });
-
-  const resetForm = () => {
-    setDoctorForm({
-      name: '',
-      specialty: '',
-      specialties: [],
-      phones: [],
-      emails: [],
-      websites: [],
-    });
-    setEditingDoctor(null);
-  };
-
-  const handleEdit = (doctor) => {
-    setEditingDoctor(doctor);
-    // Handle both old format (specialty string) and new format (specialties array)
-    const specialties = doctor.specialties || (doctor.specialty ? [doctor.specialty] : []);
-    setDoctorForm({
-      name: doctor.name || '',
-      specialty: doctor.specialty || '',
-      specialties: specialties,
-      phones: doctor.phones || [],
-      emails: doctor.emails || [],
-      websites: doctor.websites || [],
-    });
-    setIsDialogOpen(true);
-  };
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-    if (!doctorForm.name.trim()) {
+  const validateForm = (data) => {
+    if (!data.name?.trim()) {
       toast({
         variant: 'destructive',
         title: 'Error',
         description: 'Doctor name is required',
       });
-      return;
+      return false;
     }
+    return true;
+  };
 
-    try {
-      if (editingDoctor) {
-        await updateDoctor(editingDoctor.id, doctorForm);
-        toast({
-          title: 'Success',
-          description: 'Doctor updated successfully',
-        });
-      } else {
-        await createDoctor(doctorForm);
-        toast({
-          title: 'Success',
-          description: 'Doctor created successfully',
-        });
-      }
-      setIsDialogOpen(false);
-      resetForm();
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error.message || 'Failed to save doctor',
-      });
+  const { create, update, remove, loading: crudLoading } = useEntityCRUD({
+    createFn: createDoctor,
+    updateFn: updateDoctor,
+    deleteFn: deleteDoctor,
+    validateFn: validateForm,
+    entityName: 'Doctor',
+  });
+
+  const handleEdit = (doctor) => {
+    setFormData(getInitialFormData(doctor));
+    openForEdit(doctor);
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    if (!validateForm(formData)) return;
+
+    const result = editingEntity
+      ? await update(editingEntity.id, formData)
+      : await create(formData);
+
+    if (result.success) {
+      close();
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this doctor?')) return;
-    
-    try {
-      await deleteDoctor(id);
-      toast({
-        title: 'Success',
-        description: 'Doctor deleted successfully',
-      });
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error.message || 'Failed to delete doctor',
-      });
-    }
+    await remove(id, { confirmMessage: 'Are you sure you want to delete this doctor?' });
   };
 
   if (loading) {
     return (
       <div className="min-h-screen p-4">
-        <LoadingSpinner />
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-muted-foreground">Loading...</div>
+        </div>
       </div>
     );
   }
@@ -140,35 +105,34 @@ export default function DoctorsPage() {
             />
           </div>
 
-          <Dialog open={isDialogOpen} onOpenChange={(open) => {
-            setIsDialogOpen(open);
-            if (!open) resetForm();
+          <Dialog open={isOpen} onOpenChange={(open) => {
+            if (!open) close();
           }}>
-            <DialogTrigger asChild>
-              <Button onClick={() => resetForm()}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Doctor
-              </Button>
-            </DialogTrigger>
+            <Button onClick={open}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Doctor
+            </Button>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{editingDoctor ? 'Edit Doctor' : 'Add Doctor'}</DialogTitle>
+                <DialogTitle>{editingEntity ? 'Edit Doctor' : 'Add Doctor'}</DialogTitle>
                 <DialogDescription>
-                  {editingDoctor ? 'Update doctor information' : 'Add a new doctor to your list'}
+                  {editingEntity ? 'Update doctor information' : 'Add a new doctor to your list'}
                 </DialogDescription>
               </DialogHeader>
               <div>
                 <ContactForm
-                  formData={doctorForm}
-                  setFormData={setDoctorForm}
+                  formData={formData}
+                  setFormData={setFormData}
                   type="doctor"
                   onSubmit={handleSave}
                 />
                 <div className="flex justify-end gap-2 pt-4 border-t mt-6">
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  <Button type="button" variant="outline" onClick={close}>
                     Cancel
                   </Button>
-                  <Button type="button" onClick={handleSave}>Save</Button>
+                  <Button type="button" onClick={handleSave} disabled={crudLoading}>
+                    Save
+                  </Button>
                 </div>
               </div>
             </DialogContent>
@@ -176,14 +140,16 @@ export default function DoctorsPage() {
         </div>
 
         {filteredDoctors.length === 0 ? (
-          <EmptyState
-            title={searchQuery ? 'No matching doctors' : 'No doctors yet'}
-            description={
-              searchQuery
-                ? 'Try a different search term'
-                : 'Add your first doctor to get started'
-            }
-          />
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">
+              {searchQuery ? 'No matching doctors' : 'No doctors yet'}
+            </p>
+            {!searchQuery && (
+              <p className="text-sm text-muted-foreground mt-2">
+                Add your first doctor to get started
+              </p>
+            )}
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredDoctors.map((doctor) => (
@@ -264,4 +230,3 @@ export default function DoctorsPage() {
     </div>
   );
 }
-

@@ -5,7 +5,6 @@
   "type": "object",
   "required": [
     "id",
-    "itineraryId",
     "medicationName",
     "dosage",
     "frequency",
@@ -23,7 +22,7 @@
     },
     "itineraryId": {
       "type": "string",
-      "description": "Reference to parent itinerary"
+      "description": "Reference to parent itinerary (optional, can also use patientId)"
     },
     "appointmentId": {
       "type": "string",
