@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { createAppointment } from '@/services/firestore';
 import { useItinerary } from '@/hooks/useItinerary';
+import { useDoctors } from '@/hooks/useDoctors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,12 +23,13 @@ export default function CreateAppointmentPage() {
   const [searchParams] = useSearchParams();
   const itineraryId = searchParams.get('itineraryId');
   const { itinerary } = useItinerary(itineraryId);
+  const { doctors, loading: doctorsLoading } = useDoctors();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     itineraryId: itineraryId || '',
     title: '',
-    doctorName: '',
+    doctorId: '',
     doctorSpecialty: '',
     doctorPhone: '',
     doctorEmail: '',
@@ -48,21 +50,50 @@ export default function CreateAppointmentPage() {
     }
   }, [itineraryId]);
 
+  // Auto-fill doctor details when a doctor is selected
+  useEffect(() => {
+    if (formData.doctorId && doctors.length > 0) {
+      const selectedDoctor = doctors.find(d => d.id === formData.doctorId);
+      if (selectedDoctor) {
+        setFormData(prev => ({
+          ...prev,
+          doctorSpecialty: selectedDoctor.specialty || '',
+          doctorPhone: selectedDoctor.phones?.[0]?.phone || '',
+          doctorEmail: selectedDoctor.emails?.[0]?.email || '',
+        }));
+      }
+    }
+  }, [formData.doctorId, doctors]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.doctorId) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Please select a doctor',
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
+      const selectedDoctor = doctors.find(d => d.id === formData.doctorId);
+      if (!selectedDoctor) {
+        throw new Error('Selected doctor not found');
+      }
+
       const appointmentDateTime = new Date(`${formData.appointmentDate}T${formData.appointmentTime}`);
       
       const appointmentData = {
         itineraryId: formData.itineraryId,
         title: formData.title,
         doctor: {
-          name: formData.doctorName,
-          specialty: formData.doctorSpecialty || undefined,
-          phone: formData.doctorPhone || undefined,
-          email: formData.doctorEmail || undefined,
+          name: selectedDoctor.name,
+          specialty: formData.doctorSpecialty || selectedDoctor.specialty || undefined,
+          phone: formData.doctorPhone || selectedDoctor.phones?.[0]?.phone || undefined,
+          email: formData.doctorEmail || selectedDoctor.emails?.[0]?.email || undefined,
         },
         clinicName: formData.clinicName || undefined,
         appointmentDate: appointmentDateTime.toISOString(),
@@ -98,7 +129,7 @@ export default function CreateAppointmentPage() {
   const backUrl = itineraryId ? `/itineraries/${itineraryId}` : '/itineraries';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="container mx-auto max-w-2xl">
         <Link to={backUrl}>
           <Button variant="ghost" className="mb-4">
@@ -130,14 +161,37 @@ export default function CreateAppointmentPage() {
               <div className="space-y-4 border-t pt-4">
                 <h3 className="font-semibold">Doctor Information</h3>
                 <div className="space-y-2">
-                  <Label htmlFor="doctorName">Doctor Name *</Label>
-                  <Input
-                    id="doctorName"
-                    value={formData.doctorName}
-                    onChange={(e) => setFormData({ ...formData, doctorName: e.target.value })}
-                    placeholder="Dr. John Smith"
-                    required
-                  />
+                  <Label htmlFor="doctorId">Doctor *</Label>
+                  <Select
+                    value={formData.doctorId}
+                    onValueChange={(value) => setFormData({ ...formData, doctorId: value })}
+                    disabled={doctorsLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={doctorsLoading ? "Loading doctors..." : "Select a doctor"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {doctors.length === 0 ? (
+                        <SelectItem value="no-doctors" disabled>
+                          No doctors found. Please add a doctor first.
+                        </SelectItem>
+                      ) : (
+                        doctors.map((doctor) => (
+                          <SelectItem key={doctor.id} value={doctor.id}>
+                            {doctor.name} {doctor.specialty && `- ${doctor.specialty}`}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {doctors.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      <Link to="/doctors" className="text-primary hover:underline">
+                        Add a doctor
+                      </Link>
+                      {' '}to create an appointment
+                    </p>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">

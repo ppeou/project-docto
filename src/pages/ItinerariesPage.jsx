@@ -9,6 +9,7 @@ import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { Plus, Search } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { AppHeader } from '@/components/shared/AppHeader';
 
 export default function ItinerariesPage() {
   const { itineraries, loading } = useItineraries();
@@ -32,8 +33,9 @@ export default function ItinerariesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-4">
-      <div className="container mx-auto max-w-6xl">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+      <AppHeader title="Itineraries" />
+      <main className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Healthcare Itineraries</h1>
           <Link to="/itineraries/create">
@@ -103,7 +105,7 @@ export default function ItinerariesPage() {
             ))}
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

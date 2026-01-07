@@ -1,15 +1,23 @@
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useItinerary } from '@/hooks/useItinerary';
 import { useItineraryAppointments } from '@/hooks/useItineraryAppointments';
 import { useItineraryPrescriptions } from '@/hooks/useItineraryPrescriptions';
 import { useItineraryNotes } from '@/hooks/useItineraryNotes';
+import { usePatients } from '@/hooks/usePatients';
+import { updateItinerary } from '@/services/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { ErrorMessage } from '@/components/shared/ErrorMessage';
-import { ArrowLeft, Plus, Calendar, Pill, FileText } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { ArrowLeft, Plus, Calendar, Pill, FileText, Edit } from 'lucide-react';
 import { formatDate, formatDateTime } from '@/lib/utils';
 
 const NOTE_TYPE_LABELS = {
@@ -26,6 +34,102 @@ export default function ItineraryDetailPage() {
   const { appointments, loading: appointmentsLoading } = useItineraryAppointments(id);
   const { prescriptions, loading: prescriptionsLoading } = useItineraryPrescriptions(id);
   const { notes, loading: notesLoading } = useItineraryNotes(id);
+  const { patients, loading: patientsLoading } = usePatients();
+  const { toast } = useToast();
+  
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    description: '',
+    patientId: '',
+    startDate: '',
+    endDate: '',
+  });
+  const [saving, setSaving] = useState(false);
+
+  // Helper function to convert date to YYYY-MM-DD format
+  const dateToInputFormat = (date) => {
+    if (!date) return '';
+    try {
+      // Handle Firestore Timestamp
+      const d = date.toDate ? date.toDate() : (date instanceof Date ? date : new Date(date));
+      if (isNaN(d.getTime())) return '';
+      return d.toISOString().split('T')[0];
+    } catch (error) {
+      console.error('Error converting date:', error);
+      return '';
+    }
+  };
+
+  // Initialize form when itinerary loads
+  useEffect(() => {
+    if (itinerary && patients.length > 0) {
+      // Find patient by matching name and relation
+      const matchingPatient = patients.find(
+        p => p.name === itinerary.patient?.name && p.relation === itinerary.patient?.relation
+      );
+      
+      setEditForm({
+        name: itinerary.name || '',
+        description: itinerary.description || '',
+        patientId: matchingPatient?.id || '',
+        startDate: dateToInputFormat(itinerary.startDate),
+        endDate: dateToInputFormat(itinerary.endDate),
+      });
+    }
+  }, [itinerary, patients]);
+
+  const handleEdit = () => {
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    if (!editForm.name.trim() || !editForm.patientId) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Itinerary name and patient are required',
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const selectedPatient = patients.find(p => p.id === editForm.patientId);
+      if (!selectedPatient) {
+        throw new Error('Selected patient not found');
+      }
+
+      const updateData = {
+        name: editForm.name,
+        description: editForm.description || null,
+        patient: {
+          name: selectedPatient.name,
+          relation: selectedPatient.relation,
+        },
+        startDate: editForm.startDate ? new Date(editForm.startDate).toISOString() : null,
+        endDate: editForm.endDate ? new Date(editForm.endDate).toISOString() : null,
+      };
+
+      await updateItinerary(id, updateData);
+      
+      toast({
+        title: 'Success',
+        description: 'Itinerary updated successfully',
+      });
+      
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to update itinerary',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -44,8 +148,8 @@ export default function ItineraryDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
-      <div className="bg-white border-b sticky top-0 z-10">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+      <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
           <Link to="/itineraries">
             <Button variant="ghost" className="mb-4">
@@ -60,6 +164,110 @@ export default function ItineraryDetailPage() {
                 {itinerary.patient?.name} ({itinerary.patient?.relation})
               </p>
             </div>
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" onClick={handleEdit}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Edit Itinerary</DialogTitle>
+                  <DialogDescription>
+                    Update the itinerary information
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSaveEdit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="editName">Itinerary Name *</Label>
+                    <Input
+                      id="editName"
+                      value={editForm.name}
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="editPatientId">Patient *</Label>
+                    <Select
+                      value={editForm.patientId}
+                      onValueChange={(value) => setEditForm({ ...editForm, patientId: value })}
+                      disabled={patientsLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={patientsLoading ? "Loading patients..." : "Select a patient"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {patients.length === 0 ? (
+                          <SelectItem value="no-patients" disabled>
+                            No patients found. Please add a patient first.
+                          </SelectItem>
+                        ) : (
+                          patients.map((patient) => (
+                            <SelectItem key={patient.id} value={patient.id}>
+                              {patient.name} ({patient.relation})
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {patients.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        <Link to="/patients" className="text-primary hover:underline">
+                          Add a patient
+                        </Link>
+                        {' '}to continue
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="editDescription">Description</Label>
+                    <textarea
+                      id="editDescription"
+                      className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={editForm.description}
+                      onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                      placeholder="Optional description"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="editStartDate">Start Date</Label>
+                      <Input
+                        id="editStartDate"
+                        type="date"
+                        value={editForm.startDate}
+                        onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="editEndDate">End Date</Label>
+                      <Input
+                        id="editEndDate"
+                        type="date"
+                        value={editForm.endDate}
+                        onChange={(e) => setEditForm({ ...editForm, endDate: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={saving}>
+                      {saving ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>

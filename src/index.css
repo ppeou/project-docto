@@ -53,9 +53,34 @@
   * {
     @apply border-border;
   }
-  body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+  html {
+    @apply bg-background;
   }
+  
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+  }
+}
+
+/* Font Size Classes - Applied to html element for global scaling */
+html.font-size-small {
+  font-size: 87.5%; /* 14px base */
+}
+
+html.font-size-regular {
+  font-size: 100%; /* 16px base */
+}
+
+html.font-size-large {
+  font-size: 112.5%; /* 18px base */
+}
+
+html.font-size-extra-large {
+  font-size: 125%; /* 20px base */
 }
 

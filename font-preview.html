@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Font Preview - Project Docto</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&family=Poppins:wght@300;400;500;600;700&family=Work+Sans:wght@300;400;500;600;700&family=Source+Sans+Pro:wght@300;400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            min-height: 100vh;
+            font-family: system-ui, sans-serif;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 40px;
+            font-size: 2.5rem;
+        }
+        
+        .font-option {
+            margin-bottom: 50px;
+            padding: 30px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .font-option:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+        }
+        
+        .font-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .font-sample {
+            margin-bottom: 15px;
+        }
+        
+        .sample-heading {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #1f2937;
+        }
+        
+        .sample-body {
+            font-size: 1.125rem;
+            font-weight: 400;
+            line-height: 1.6;
+            color: #4b5563;
+            margin-bottom: 8px;
+        }
+        
+        .sample-small {
+            font-size: 0.875rem;
+            font-weight: 400;
+            color: #6b7280;
+        }
+        
+        .sample-label {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Font 1: Inter */
+        .font-inter .font-name,
+        .font-inter .sample-heading,
+        .font-inter .sample-body,
+        .font-inter .sample-small {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* Font 2: Open Sans */
+        .font-open-sans .font-name,
+        .font-open-sans .sample-heading,
+        .font-open-sans .sample-body,
+        .font-open-sans .sample-small {
+            font-family: 'Open Sans', sans-serif;
+        }
+        
+        /* Font 3: Roboto */
+        .font-roboto .font-name,
+        .font-roboto .sample-heading,
+        .font-roboto .sample-body,
+        .font-roboto .sample-small {
+            font-family: 'Roboto', sans-serif;
+        }
+        
+        /* Font 4: Poppins */
+        .font-poppins .font-name,
+        .font-poppins .sample-heading,
+        .font-poppins .sample-body,
+        .font-poppins .sample-small {
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        /* Font 5: Work Sans */
+        .font-work-sans .font-name,
+        .font-work-sans .sample-heading,
+        .font-work-sans .sample-body,
+        .font-work-sans .sample-small {
+            font-family: 'Work Sans', sans-serif;
+        }
+        
+        /* Font 6: Source Sans Pro */
+        .font-source-sans .font-name,
+        .font-source-sans .sample-heading,
+        .font-source-sans .sample-body,
+        .font-source-sans .sample-small {
+            font-family: 'Source Sans Pro', sans-serif;
+        }
+        
+        /* Font 7: Lato */
+        .font-lato .font-name,
+        .font-lato .sample-heading,
+        .font-lato .sample-body,
+        .font-lato .sample-small {
+            font-family: 'Lato', sans-serif;
+        }
+        
+        .description {
+            font-size: 0.9rem;
+            color: #6b7280;
+            font-style: italic;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Font Preview for Project Docto</h1>
+        
+        <div class="font-option font-inter">
+            <div class="font-name">1. Inter</div>
+            <div class="font-sample">
+                <div class="sample-label">Heading</div>
+                <div class="sample-heading">Dr. Sarah Johnson - Cardiology Appointment</div>
+                <div class="sample-label">Body Text</div>
+                <div class="sample-body">Your appointment is scheduled for tomorrow at 2:30 PM. Please arrive 15 minutes early and bring your insurance card and a list of current medications.</div>
+                <div class="sample-label">Small Text</div>
+                <div class="sample-small">Last updated: March 15, 2024 at 10:30 AM</div>
+            </div>
+            <div class="description">Modern, geometric sans-serif - Excellent for screens</div>
+        </div>
+        
+        <div class="font-option font-open-sans">
+            <div class="font-name">2. Open Sans</div>
+            <div class="font-sample">
+                <div class="sample-label">Heading</div>
+                <div class="sample-heading">Dr. Sarah Johnson - Cardiology Appointment</div>
+                <div class="sample-label">Body Text</div>
+                <div class="sample-body">Your appointment is scheduled for tomorrow at 2:30 PM. Please arrive 15 minutes early and bring your insurance card and a list of current medications.</div>
+                <div class="sample-label">Small Text</div>
+                <div class="sample-small">Last updated: March 15, 2024 at 10:30 AM</div>
+            </div>
+            <div class="description">Humanist sans-serif - Warm and approachable</div>
+        </div>
+        
+        <div class="font-option font-roboto">
+            <div class="font-name">3. Roboto</div>
+            <div class="font-sample">
+                <div class="sample-label">Heading</div>
+                <div class="sample-heading">Dr. Sarah Johnson - Cardiology Appointment</div>
+                <div class="sample-label">Body Text</div>
+                <div class="sample-body">Your appointment is scheduled for tomorrow at 2:30 PM. Please arrive 15 minutes early and bring your insurance card and a list of current medications.</div>
+                <div class="sample-label">Small Text</div>
+                <div class="sample-small">Last updated: March 15, 2024 at 10:30 AM</div>
+            </div>
+            <div class="description">Geometric sans-serif - Clean and modern (Google Material Design)</div>
+        </div>
+        
+        <div class="font-option font-poppins">
+            <div class="font-name">4. Poppins</div>
+            <div class="font-sample">
+                <div class="sample-label">Heading</div>
+                <div class="sample-heading">Dr. Sarah Johnson - Cardiology Appointment</div>
+                <div class="sample-label">Body Text</div>
+                <div class="sample-body">Your appointment is scheduled for tomorrow at 2:30 PM. Please arrive 15 minutes early and bring your insurance card and a list of current medications.</div>
+                <div class="sample-label">Small Text</div>
+                <div class="sample-small">Last updated: March 15, 2024 at 10:30 AM</div>
+            </div>
+            <div class="description">Geometric sans-serif with rounded edges - Friendly and modern</div>
+        </div>
+        
+        <div class="font-option font-work-sans">
+            <div class="font-name">5. Work Sans</div>
+            <div class="font-sample">
+                <div class="sample-label">Heading</div>
+                <div class="sample-heading">Dr. Sarah Johnson - Cardiology Appointment</div>
+                <div class="sample-label">Body Text</div>
+                <div class="sample-body">Your appointment is scheduled for tomorrow at 2:30 PM. Please arrive 15 minutes early and bring your insurance card and a list of current medications.</div>
+                <div class="sample-label">Small Text</div>
+                <div class="sample-small">Last updated: March 15, 2024 at 10:30 AM</div>
+            </div>
+            <div class="description">Professional sans-serif - Excellent legibility for screens</div>
+        </div>
+        
+        <div class="font-option font-source-sans">
+            <div class="font-name">6. Source Sans Pro</div>
+            <div class="font-sample">
+                <div class="sample-label">Heading</div>
+                <div class="sample-heading">Dr. Sarah Johnson - Cardiology Appointment</div>
+                <div class="sample-label">Body Text</div>
+                <div class="sample-body">Your appointment is scheduled for tomorrow at 2:30 PM. Please arrive 15 minutes early and bring your insurance card and a list of current medications.</div>
+                <div class="sample-label">Small Text</div>
+                <div class="sample-small">Last updated: March 15, 2024 at 10:30 AM</div>
+            </div>
+            <div class="description">Humanist sans-serif - Professional and readable (Adobe font)</div>
+        </div>
+        
+        <div class="font-option font-lato">
+            <div class="font-name">7. Lato</div>
+            <div class="font-sample">
+                <div class="sample-label">Heading</div>
+                <div class="sample-heading">Dr. Sarah Johnson - Cardiology Appointment</div>
+                <div class="sample-label">Body Text</div>
+                <div class="sample-body">Your appointment is scheduled for tomorrow at 2:30 PM. Please arrive 15 minutes early and bring your insurance card and a list of current medications.</div>
+                <div class="sample-label">Small Text</div>
+                <div class="sample-small">Last updated: March 15, 2024 at 10:30 AM</div>
+            </div>
+            <div class="description">Humanist sans-serif - Warm and friendly professional feel</div>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -276,3 +276,149 @@ export const subscribeToAppointmentNotes = (appointmentId, callback) => {
   });
 };
 
+// Patients
+export const createPatient = async (data) => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not authenticated');
+
+  const docRef = await addDoc(collection(db, 'patients'), {
+    ...data,
+    userId: user.uid,
+    created: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+    updated: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+    isDeleted: false,
+  });
+
+  return docRef.id;
+};
+
+export const updatePatient = async (id, data) => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not authenticated');
+
+  // Get existing document to preserve userId and created fields
+  const docRef = doc(db, 'patients', id);
+  const docSnap = await getDoc(docRef);
+  
+  if (!docSnap.exists()) {
+    throw new Error('Patient not found');
+  }
+
+  const existingData = docSnap.data();
+  
+  // Remove fields that shouldn't be updated, but preserve userId and created
+  const { userId, created, isDeleted, ...updateData } = data;
+
+  await updateDoc(docRef, {
+    ...updateData,
+    userId: existingData.userId, // Preserve userId
+    created: existingData.created, // Preserve created
+    updated: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+  });
+};
+
+export const deletePatient = async (id) => {
+  await updateDoc(doc(db, 'patients', id), {
+    isDeleted: true,
+    updated: {
+      by: auth.currentUser.uid,
+      on: serverTimestamp(),
+    },
+  });
+};
+
+export const subscribeToUserPatients = (userId, callback) => {
+  const q = query(
+    collection(db, 'patients'),
+    where('userId', '==', userId),
+    where('isDeleted', '==', false),
+    orderBy('created.on', 'desc')
+  );
+  return onSnapshot(q, (snapshot) => {
+    const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    callback(data);
+  });
+};
+
+// Doctors
+export const createDoctor = async (data) => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not authenticated');
+
+  const docRef = await addDoc(collection(db, 'doctors'), {
+    ...data,
+    userId: user.uid,
+    created: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+    updated: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+    isDeleted: false,
+  });
+
+  return docRef.id;
+};
+
+export const updateDoctor = async (id, data) => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not authenticated');
+
+  // Get existing document to preserve userId and created fields
+  const docRef = doc(db, 'doctors', id);
+  const docSnap = await getDoc(docRef);
+  
+  if (!docSnap.exists()) {
+    throw new Error('Doctor not found');
+  }
+
+  const existingData = docSnap.data();
+  
+  // Remove fields that shouldn't be updated, but preserve userId and created
+  const { userId, created, isDeleted, ...updateData } = data;
+
+  await updateDoc(docRef, {
+    ...updateData,
+    userId: existingData.userId, // Preserve userId
+    created: existingData.created, // Preserve created
+    updated: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+  });
+};
+
+export const deleteDoctor = async (id) => {
+  await updateDoc(doc(db, 'doctors', id), {
+    isDeleted: true,
+    updated: {
+      by: auth.currentUser.uid,
+      on: serverTimestamp(),
+    },
+  });
+};
+
+export const subscribeToUserDoctors = (userId, callback) => {
+  const q = query(
+    collection(db, 'doctors'),
+    where('userId', '==', userId),
+    where('isDeleted', '==', false),
+    orderBy('created.on', 'desc')
+  );
+  return onSnapshot(q, (snapshot) => {
+    const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    callback(data);
+  });
+};
+

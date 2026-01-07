@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getPrescription, updatePrescription, deletePrescription } from '@/services/firestore';
 import { usePrescription } from '@/hooks/usePrescription';
@@ -7,14 +8,19 @@ import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { ErrorMessage } from '@/components/shared/ErrorMessage';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Edit, Trash2, Pill, Calendar, Phone, User } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Pill, Calendar, Phone, User, RefreshCw } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function PrescriptionDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { prescription, loading, error } = usePrescription(id);
+  const [isRefillDialogOpen, setIsRefillDialogOpen] = useState(false);
+  const [refillDate, setRefillDate] = useState('');
 
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this prescription?')) return;
@@ -51,6 +57,48 @@ export default function PrescriptionDetailPage() {
     }
   };
 
+  const handleRecordRefill = async () => {
+    if (!prescription.refills || prescription.refills.remaining <= 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'No refills remaining',
+      });
+      return;
+    }
+
+    try {
+      const newRemaining = prescription.refills.remaining - 1;
+      const updateData = {
+        refills: {
+          ...prescription.refills,
+          remaining: newRemaining,
+        },
+      };
+
+      // If a refill date is provided, update it
+      if (refillDate) {
+        updateData.nextRefillDate = new Date(refillDate).toISOString();
+      }
+
+      await updatePrescription(id, updateData);
+      
+      toast({
+        title: 'Success',
+        description: `Refill recorded. ${newRemaining} refill${newRemaining !== 1 ? 's' : ''} remaining.`,
+      });
+      
+      setIsRefillDialogOpen(false);
+      setRefillDate('');
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to record refill',
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen p-4">
@@ -80,8 +128,8 @@ export default function PrescriptionDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
-      <div className="bg-white border-b sticky top-0 z-10">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+      <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
           <Link to={prescription.itineraryId ? `/itineraries/${prescription.itineraryId}` : '/itineraries'}>
             <Button variant="ghost" className="mb-4">
@@ -184,6 +232,53 @@ export default function PrescriptionDetailPage() {
                       <p className="text-sm text-muted-foreground">Next Refill</p>
                       <p className="font-medium">{formatDate(prescription.nextRefillDate)}</p>
                     </div>
+                  )}
+                  {prescription.refills.remaining > 0 && (
+                    <Dialog open={isRefillDialogOpen} onOpenChange={setIsRefillDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="w-full">
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          Record Refill
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Record Refill</DialogTitle>
+                          <DialogDescription>
+                            Record that you've picked up a refill for this prescription
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="refillDate">Refill Date (Optional)</Label>
+                            <Input
+                              id="refillDate"
+                              type="date"
+                              value={refillDate}
+                              onChange={(e) => setRefillDate(e.target.value)}
+                              placeholder="Leave empty to use today's date"
+                            />
+                            <p className="text-sm text-muted-foreground">
+                              This will update the next refill date. Leave empty to keep current date.
+                            </p>
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setIsRefillDialogOpen(false);
+                                setRefillDate('');
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                            <Button onClick={handleRecordRefill}>
+                              Record Refill
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   )}
                 </>
               )}

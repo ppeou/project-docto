@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createItinerary } from '@/services/firestore';
+import { usePatients } from '@/hooks/usePatients';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,32 +11,44 @@ import { useToast } from '@/components/ui/use-toast';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const PATIENT_RELATIONS = ['Self', 'Mother', 'Father', 'Spouse', 'Child', 'Sibling', 'Other'];
-
 export default function CreateItineraryPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { patients, loading: patientsLoading } = usePatients();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    patientName: '',
-    patientRelation: 'Self',
+    patientId: '',
     startDate: '',
     endDate: '',
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.patientId) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Please select a patient',
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
+      const selectedPatient = patients.find(p => p.id === formData.patientId);
+      if (!selectedPatient) {
+        throw new Error('Selected patient not found');
+      }
+
       const itineraryData = {
         name: formData.name,
         description: formData.description || null,
         patient: {
-          name: formData.patientName,
-          relation: formData.patientRelation,
+          name: selectedPatient.name,
+          relation: selectedPatient.relation,
         },
         startDate: formData.startDate ? new Date(formData.startDate).toISOString() : null,
         endDate: formData.endDate ? new Date(formData.endDate).toISOString() : null,
@@ -61,7 +74,7 @@ export default function CreateItineraryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="container mx-auto max-w-2xl">
         <Link to="/itineraries">
           <Button variant="ghost" className="mb-4">
@@ -91,33 +104,37 @@ export default function CreateItineraryPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="patientName">Patient Name *</Label>
-                <Input
-                  id="patientName"
-                  value={formData.patientName}
-                  onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
-                  placeholder="Full name"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="patientRelation">Patient Relation *</Label>
+                <Label htmlFor="patientId">Patient *</Label>
                 <Select
-                  value={formData.patientRelation}
-                  onValueChange={(value) => setFormData({ ...formData, patientRelation: value })}
+                  value={formData.patientId}
+                  onValueChange={(value) => setFormData({ ...formData, patientId: value })}
+                  disabled={patientsLoading}
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder={patientsLoading ? "Loading patients..." : "Select a patient"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {PATIENT_RELATIONS.map((relation) => (
-                      <SelectItem key={relation} value={relation}>
-                        {relation}
+                    {patients.length === 0 ? (
+                      <SelectItem value="no-patients" disabled>
+                        No patients found. Please add a patient first.
                       </SelectItem>
-                    ))}
+                    ) : (
+                      patients.map((patient) => (
+                        <SelectItem key={patient.id} value={patient.id}>
+                          {patient.name} ({patient.relation})
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
+                {patients.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    <Link to="/patients" className="text-primary hover:underline">
+                      Add a patient
+                    </Link>
+                    {' '}to create an itinerary
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">

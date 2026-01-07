@@ -1,0 +1,16 @@
+<svg width="97" height="26" viewBox="0 0 97 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Acorn Icon (matching Acorns logo style) -->
+  <g>
+    <!-- Acorn cap - curved top -->
+    <path d="M8.5 1C9.5 1 10.2 1.8 10.5 2.8C10.8 3.8 10.5 4.8 10 5.3C9.5 5.8 8.5 5.8 8 5.3C7.5 4.8 7.2 3.8 7.5 2.8C7.8 1.8 8.5 1 8.5 1Z" fill="#74C947"/>
+    
+    <!-- Acorn body - oval shape -->
+    <ellipse cx="13" cy="13" rx="4.8" ry="7" fill="#74C947"/>
+    
+    <!-- Acorn stem -->
+    <line x1="8.5" y1="1" x2="8.5" y2="0" stroke="#74C947" stroke-width="1.2" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Docto Text - Matching Acorns typography style exactly -->
+  <text x="28" y="18" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="18" font-weight="600" fill="#1a1a1a" letter-spacing="-0.01em">Docto</text>
+</svg>

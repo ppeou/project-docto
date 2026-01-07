@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { AppHeader } from '@/components/shared/AppHeader';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function CalendarPage() {
@@ -23,8 +24,9 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-4">
-      <div className="container mx-auto max-w-6xl">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+      <AppHeader title="Calendar" />
+      <main className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Calendar</h1>
           <div className="flex gap-4 items-center">
@@ -78,7 +80,7 @@ export default function CalendarPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </main>
     </div>
   );
 }

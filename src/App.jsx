@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { Toaster } from './components/ui/toaster';
+import { SettingsProvider } from './components/SettingsProvider';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
 import ItinerariesPage from './pages/ItinerariesPage';
@@ -13,6 +14,10 @@ import PrescriptionDetailPage from './pages/PrescriptionDetailPage';
 import CreateDoctorNotePage from './pages/CreateDoctorNotePage';
 import DoctorNoteDetailPage from './pages/DoctorNoteDetailPage';
 import CalendarPage from './pages/CalendarPage';
+import SettingsPage from './pages/SettingsPage';
+import PatientsPage from './pages/PatientsPage';
+import DoctorsPage from './pages/DoctorsPage';
+import SpecialtiesPage from './pages/SpecialtiesPage';
 import { LoadingSpinner } from './components/shared/LoadingSpinner';
 
 function ProtectedRoute({ children }) {
@@ -38,7 +43,8 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
+      <SettingsProvider>
+        <Routes>
         <Route
           path="/auth"
           element={user ? <Navigate to="/" replace /> : <AuthPage />}
@@ -131,9 +137,42 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/patients"
+          element={
+            <ProtectedRoute>
+              <PatientsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/doctors"
+          element={
+            <ProtectedRoute>
+              <DoctorsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/specialties"
+          element={
+            <ProtectedRoute>
+              <SpecialtiesPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-      <Toaster />
+        </Routes>
+        <Toaster />
+      </SettingsProvider>
     </BrowserRouter>
   );
 }

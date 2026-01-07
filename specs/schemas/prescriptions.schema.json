@@ -71,6 +71,20 @@
       "pattern": "^\\+[1-9]\\d{1,14}$",
       "description": "Pharmacy phone number in E.164 format"
     },
+    "rxNumber": {
+      "type": "string",
+      "maxLength": 50,
+      "description": "Prescription number (RX) from pharmacy"
+    },
+    "corpNumber": {
+      "type": "string",
+      "maxLength": 50,
+      "description": "Corporate/Group number (CORP #)"
+    },
+    "patientId": {
+      "type": "string",
+      "description": "Direct reference to patient (optional, can also be via itinerary)"
+    },
     "datePrescribed": {
       "type": "string",
       "format": "date-time",

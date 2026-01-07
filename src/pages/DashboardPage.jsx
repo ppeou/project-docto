@@ -1,23 +1,16 @@
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
 import { useItineraries } from '@/hooks/useItineraries';
-import { signOut } from '@/services/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { EmptyState } from '@/components/shared/EmptyState';
+import { AppHeader } from '@/components/shared/AppHeader';
 import { Plus, Calendar, Pill, Users } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 export default function DashboardPage() {
-  const { user, userProfile } = useAuth();
   const { itineraries, loading } = useItineraries();
-
-  const handleSignOut = async () => {
-    await signOut();
-  };
 
   if (loading) {
     return (
@@ -27,31 +20,9 @@ export default function DashboardPage() {
     );
   }
 
-  const initials = userProfile?.displayName
-    ? userProfile.displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-    : user?.email?.[0].toUpperCase() || 'U';
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
-      {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-            Project Docto
-          </h1>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground hidden sm:inline">
-              {user?.email}
-            </span>
-            <Avatar>
-              <AvatarFallback>{initials}</AvatarFallback>
-            </Avatar>
-            <Button variant="outline" onClick={handleSignOut}>
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+      <AppHeader />
 
       <main className="container mx-auto px-4 py-8">
         {/* Stats Cards */}
