@@ -86,10 +86,20 @@ export const subscribeToUserItineraries = (userId, callback) => {
     where('isDeleted', '==', false),
     orderBy('created.on', 'desc')
   );
-  return onSnapshot(q, (snapshot) => {
-    const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    callback(data);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      callback(data);
+    },
+    (error) => {
+      console.error('Error in subscribeToUserItineraries:', error);
+      // Return empty array on permission error
+      if (error.code === 'permission-denied') {
+        callback([]);
+      }
+    }
+  );
 };
 
 // Appointments
@@ -159,10 +169,19 @@ export const subscribeToItineraryAppointments = (itineraryId, callback) => {
     where('isDeleted', '==', false),
     orderBy('appointmentDate', 'asc')
   );
-  return onSnapshot(q, (snapshot) => {
-    const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    callback(data);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      callback(data);
+    },
+    (error) => {
+      console.error('Error in subscribeToItineraryAppointments:', error);
+      if (error.code === 'permission-denied') {
+        callback([]);
+      }
+    }
+  );
 };
 
 // Prescriptions
@@ -236,10 +255,19 @@ export const subscribeToItineraryPrescriptions = (itineraryId, callback) => {
     where('isDeleted', '==', false),
     orderBy('datePrescribed', 'desc')
   );
-  return onSnapshot(q, (snapshot) => {
-    const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    callback(data);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      callback(data);
+    },
+    (error) => {
+      console.error('Error in subscribeToItineraryPrescriptions:', error);
+      if (error.code === 'permission-denied') {
+        callback([]);
+      }
+    }
+  );
 };
 
 // Doctor Notes
@@ -270,10 +298,19 @@ export const subscribeToAppointmentNotes = (appointmentId, callback) => {
     where('isDeleted', '==', false),
     orderBy('created.on', 'desc')
   );
-  return onSnapshot(q, (snapshot) => {
-    const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    callback(data);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      callback(data);
+    },
+    (error) => {
+      console.error('Error in subscribeToAppointmentNotes:', error);
+      if (error.code === 'permission-denied') {
+        callback([]);
+      }
+    }
+  );
 };
 
 // Patients
@@ -343,10 +380,19 @@ export const subscribeToUserPatients = (userId, callback) => {
     where('isDeleted', '==', false),
     orderBy('created.on', 'desc')
   );
-  return onSnapshot(q, (snapshot) => {
-    const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    callback(data);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      callback(data);
+    },
+    (error) => {
+      console.error('Error in subscribeToUserPatients:', error);
+      if (error.code === 'permission-denied') {
+        callback([]);
+      }
+    }
+  );
 };
 
 // Doctors
@@ -416,9 +462,18 @@ export const subscribeToUserDoctors = (userId, callback) => {
     where('isDeleted', '==', false),
     orderBy('created.on', 'desc')
   );
-  return onSnapshot(q, (snapshot) => {
-    const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    callback(data);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      callback(data);
+    },
+    (error) => {
+      console.error('Error in subscribeToUserDoctors:', error);
+      if (error.code === 'permission-denied') {
+        callback([]);
+      }
+    }
+  );
 };
 

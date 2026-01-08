@@ -157,7 +157,7 @@ export default function CreatePrescriptionPage() {
   const backUrl = itineraryId ? `/itineraries/${itineraryId}` : '/itineraries';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="min-h-screen bg-background p-4">
       <div className="container mx-auto max-w-2xl">
         <Link to={backUrl}>
           <Button variant="ghost" className="mb-4">

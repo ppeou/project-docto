@@ -12,5 +12,5 @@
   </g>
   
   <!-- Docto Text - Matching Acorns typography style exactly -->
-  <text x="28" y="18" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="18" font-weight="600" fill="#1a1a1a" letter-spacing="-0.01em">Docto</text>
+  <text x="28" y="18" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="18" font-weight="600" fill="#74C947" letter-spacing="-0.01em">Docto</text>
 </svg>

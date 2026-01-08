@@ -135,8 +135,17 @@ export function createUserQuery(collectionName, userId, orderByField = 'created.
  */
 export function subscribeToUserDocuments(collectionName, userId, callback, orderByField = 'created.on', orderDirection = 'desc') {
   const q = createUserQuery(collectionName, userId, orderByField, orderDirection);
-  return onSnapshot(q, (snapshot) => {
-    callback(snapshotToArray(snapshot));
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      callback(snapshotToArray(snapshot));
+    },
+    (error) => {
+      console.error(`Error in subscribeToUserDocuments (${collectionName}):`, error);
+      if (error.code === 'permission-denied') {
+        callback([]);
+      }
+    }
+  );
 }
 

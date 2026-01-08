@@ -30,7 +30,8 @@ service cloud.firestore {
 
     // Users collection
     match /users/{userId} {
-      allow read: if isOwner(userId);
+      // Allow read if user owns the document (even if it doesn't exist yet)
+      allow read: if isAuthenticated() && request.auth.uid == userId;
       allow create: if isOwner(userId) && 
                        request.resource.data.id == request.auth.uid &&
                        request.resource.data.email == request.auth.token.email;
@@ -116,11 +117,17 @@ service cloud.firestore {
 
     // Appointments collection
     match /appointments/{appointmentId} {
-      // Allow read if user created it and it's not deleted
+      // Helper function to check if user created the itinerary
+      function itineraryCreator() {
+        return resource.data.itineraryId != null &&
+               get(/databases/$(database)/documents/itineraries/$(resource.data.itineraryId)).data.created.by == request.auth.uid;
+      }
+      
+      // Allow read if user created it OR created the itinerary it belongs to
       // For queries, Firestore checks each document individually
       allow read: if isAuthenticated() && 
                      (!resource.exists || 
-                      (resource.data.created.by == request.auth.uid && isNotDeleted()));
+                      ((resource.data.created.by == request.auth.uid || itineraryCreator()) && isNotDeleted()));
       
       // Allow create if user is the creator and required fields are present
       allow create: if isAuthenticated() && 
@@ -143,11 +150,17 @@ service cloud.firestore {
 
     // Prescriptions collection
     match /prescriptions/{prescriptionId} {
-      // Allow read if user created it and it's not deleted
+      // Helper function to check if user created the itinerary
+      function itineraryCreator() {
+        return resource.data.itineraryId != null &&
+               get(/databases/$(database)/documents/itineraries/$(resource.data.itineraryId)).data.created.by == request.auth.uid;
+      }
+      
+      // Allow read if user created it OR created the itinerary it belongs to
       // For queries, Firestore checks each document individually
       allow read: if isAuthenticated() && 
                      (!resource.exists || 
-                      (resource.data.created.by == request.auth.uid && isNotDeleted()));
+                      ((resource.data.created.by == request.auth.uid || itineraryCreator()) && isNotDeleted()));
       
       // Allow create if user is the creator and required fields are present
       allow create: if isAuthenticated() && 
@@ -169,11 +182,19 @@ service cloud.firestore {
 
     // Doctor Notes collection
     match /doctorNotes/{noteId} {
-      // Allow read if user created it and it's not deleted
+      // Helper function to check if user created the itinerary
+      // Doctor notes always have an itineraryId according to schema
+      function itineraryCreator() {
+        return resource.data.itineraryId != null &&
+               exists(/databases/$(database)/documents/itineraries/$(resource.data.itineraryId)) &&
+               get(/databases/$(database)/documents/itineraries/$(resource.data.itineraryId)).data.created.by == request.auth.uid;
+      }
+      
+      // Allow read if user created it OR created the itinerary it belongs to
       // For queries, Firestore checks each document individually
       allow read: if isAuthenticated() && 
                      (!resource.exists || 
-                      (resource.data.created.by == request.auth.uid && isNotDeleted()));
+                      ((resource.data.created.by == request.auth.uid || itineraryCreator()) && isNotDeleted()));
       
       // Allow create if user is the creator and required fields are present
       allow create: if isAuthenticated() && 

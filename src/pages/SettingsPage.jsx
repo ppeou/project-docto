@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSettingsStore } from '@/store/settingsStore';
 import { Button } from '@/components/ui/button';
@@ -6,17 +6,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
-import { ArrowLeft, Settings, User } from 'lucide-react';
+import { ArrowLeft, Settings, User, Upload, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { signOut, updateUserProfile, changeEmail, changePassword } from '@/services/auth';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { uploadFile } from '@/services/storage';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/components/ui/use-toast';
+import { AppHeader } from '@/components/shared/AppHeader';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { user, userProfile } = useAuth();
   const { fontSize, setFontSize, theme, setTheme } = useSettingsStore();
   const { toast } = useToast();
+  const fileInputRef = useRef(null);
 
   // Profile form state
   const [displayName, setDisplayName] = useState(userProfile?.displayName || '');
@@ -26,15 +29,24 @@ export default function SettingsPage() {
   const [passwordCurrentPassword, setPasswordCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState(userProfile?.photo || user?.photoURL || null);
+  const [profilePhotoFile, setProfilePhotoFile] = useState(null);
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState(null);
+
+  // Separate loading states
+  const [loadingDisplayName, setLoadingDisplayName] = useState(false);
+  const [loadingPhone, setLoadingPhone] = useState(false);
+  const [loadingEmail, setLoadingEmail] = useState(false);
+  const [loadingPassword, setLoadingPassword] = useState(false);
 
   // Sync form state with userProfile
   useEffect(() => {
     if (userProfile) {
       setDisplayName(userProfile.displayName || '');
       setPhone(userProfile.phone || '');
+      setProfilePhoto(userProfile.photo || user?.photoURL || null);
     }
-  }, [userProfile]);
+  }, [userProfile, user?.photoURL]);
 
   useEffect(() => {
     if (user?.email) {
@@ -50,19 +62,69 @@ export default function SettingsPage() {
     await signOut();
   };
 
-  const handleUpdateProfile = async (e) => {
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Please select an image file',
+      });
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Image size must be less than 5MB',
+      });
+      return;
+    }
+
+    setProfilePhotoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setProfilePhotoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = () => {
+    setProfilePhotoFile(null);
+    setProfilePhotoPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleUpdateDisplayName = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setLoadingDisplayName(true);
 
-    const updates = {};
-    if (displayName !== userProfile?.displayName) {
-      updates.displayName = displayName;
-    }
-    if (phone !== userProfile?.phone) {
-      updates.phone = phone || null;
+    let updates = { displayName: displayName || null };
+    
+    // Upload photo if new one is selected
+    if (profilePhotoFile) {
+      try {
+        const photoData = await uploadFile(profilePhotoFile, `users/${user.uid}/profile/`);
+        updates.photo = photoData.url;
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: error.message || 'Failed to upload profile photo',
+        });
+        setLoadingDisplayName(false);
+        return;
+      }
     }
 
-    if (Object.keys(updates).length > 0) {
+    if (displayName !== userProfile?.displayName || profilePhotoFile) {
       const result = await updateUserProfile(updates);
       if (result.error) {
         toast({
@@ -75,9 +137,36 @@ export default function SettingsPage() {
           title: 'Success',
           description: 'Profile updated successfully',
         });
+        setProfilePhotoFile(null);
+        setProfilePhotoPreview(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
       }
     }
-    setLoading(false);
+    setLoadingDisplayName(false);
+  };
+
+  const handleUpdatePhone = async (e) => {
+    e.preventDefault();
+    setLoadingPhone(true);
+
+    if (phone !== userProfile?.phone) {
+      const result = await updateUserProfile({ phone: phone || null });
+      if (result.error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: result.error,
+        });
+      } else {
+        toast({
+          title: 'Success',
+          description: 'Phone number updated successfully',
+        });
+      }
+    }
+    setLoadingPhone(false);
   };
 
   const handleChangeEmail = async (e) => {
@@ -91,7 +180,7 @@ export default function SettingsPage() {
       return;
     }
 
-    setLoading(true);
+    setLoadingEmail(true);
     const result = await changeEmail(email, emailCurrentPassword);
     if (result.error) {
       toast({
@@ -106,7 +195,7 @@ export default function SettingsPage() {
       });
       setEmailCurrentPassword('');
     }
-    setLoading(false);
+    setLoadingEmail(false);
   };
 
   const handleChangePassword = async (e) => {
@@ -138,7 +227,7 @@ export default function SettingsPage() {
       return;
     }
 
-    setLoading(true);
+    setLoadingPassword(true);
     const result = await changePassword(newPassword, passwordCurrentPassword);
     if (result.error) {
       toast({
@@ -155,35 +244,12 @@ export default function SettingsPage() {
       setNewPassword('');
       setConfirmPassword('');
     }
-    setLoading(false);
+    setLoadingPassword(false);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              Settings
-            </h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground hidden sm:inline">
-              {user?.email}
-            </span>
-            <Avatar>
-              <AvatarFallback>{initials}</AvatarFallback>
-            </Avatar>
-            <Button variant="outline" onClick={handleSignOut}>
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background">
+      <AppHeader title="Settings" />
 
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Profile Settings */}
@@ -198,19 +264,72 @@ export default function SettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Display Name and Phone */}
-            <form onSubmit={handleUpdateProfile} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="displayName">Display Name</Label>
-                  <Input
-                    id="displayName"
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="John Doe"
-                  />
+            {/* Display Name and Profile Picture */}
+            <div>
+              <h3 className="text-sm font-medium mb-4">Display Name & Profile Picture</h3>
+              <form onSubmit={handleUpdateDisplayName} className="space-y-4">
+                <div className="flex items-start gap-6">
+                  <div className="flex flex-col items-center gap-2">
+                    <Avatar className="h-20 w-20">
+                      {profilePhotoPreview || profilePhoto ? (
+                        <AvatarImage src={profilePhotoPreview || profilePhoto} alt="Profile" />
+                      ) : null}
+                      <AvatarFallback className="text-lg">{initials}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload
+                      </Button>
+                      {(profilePhotoPreview || profilePhoto) && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleRemovePhoto}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoSelect}
+                      className="hidden"
+                    />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <Label htmlFor="displayName">Display Name</Label>
+                    <Input
+                      id="displayName"
+                      type="text"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      placeholder="John Doe"
+                    />
+                  </div>
                 </div>
+                <Button 
+                  type="submit" 
+                  disabled={loadingDisplayName} 
+                  className="bg-[#74C947] hover:bg-[#66b83d] text-white"
+                >
+                  {loadingDisplayName ? 'Saving...' : 'Save Display Name & Photo'}
+                </Button>
+              </form>
+            </div>
+
+            {/* Phone Number */}
+            <div className="pt-4 border-t dark:border-gray-700">
+              <h3 className="text-sm font-medium mb-4">Phone Number</h3>
+              <form onSubmit={handleUpdatePhone} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
                   <Input
@@ -221,11 +340,15 @@ export default function SettingsPage() {
                     placeholder="+1234567890"
                   />
                 </div>
-              </div>
-              <Button type="submit" disabled={loading} className="bg-[#74C947] hover:bg-[#66b83d] text-white">
-                {loading ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </form>
+                <Button 
+                  type="submit" 
+                  disabled={loadingPhone} 
+                  variant="outline"
+                >
+                  {loadingPhone ? 'Saving...' : 'Save Phone Number'}
+                </Button>
+              </form>
+            </div>
 
             {/* Change Email */}
             <div className="pt-4 border-t dark:border-gray-700">
@@ -252,8 +375,12 @@ export default function SettingsPage() {
                     required
                   />
                 </div>
-                <Button type="submit" disabled={loading} variant="outline">
-                  {loading ? 'Updating...' : 'Update Email'}
+                <Button 
+                  type="submit" 
+                  disabled={loadingEmail} 
+                  variant="outline"
+                >
+                  {loadingEmail ? 'Updating...' : 'Update Email'}
                 </Button>
               </form>
             </div>
@@ -294,8 +421,12 @@ export default function SettingsPage() {
                     />
                   </div>
                 </div>
-                <Button type="submit" disabled={loading} variant="outline">
-                  {loading ? 'Updating...' : 'Update Password'}
+                <Button 
+                  type="submit" 
+                  disabled={loadingPassword} 
+                  variant="outline"
+                >
+                  {loadingPassword ? 'Updating...' : 'Update Password'}
                 </Button>
               </form>
             </div>
@@ -374,4 +505,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-

@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { AppHeader } from '@/components/shared/AppHeader';
-import { Plus, Calendar, Pill, Users } from 'lucide-react';
+import { Plus, Calendar, Pill, Users, FilePlusCorner } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 export default function DashboardPage() {
@@ -21,10 +21,10 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-background">
       <AppHeader />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Card>
@@ -67,9 +67,8 @@ export default function DashboardPage() {
                 <CardDescription>Manage your family's healthcare plans</CardDescription>
               </div>
               <Link to="/itineraries/create">
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  New Itinerary
+                <Button size="icon" title="New Itinerary">
+                  <FilePlusCorner className="h-5 w-5" />
                 </Button>
               </Link>
             </div>

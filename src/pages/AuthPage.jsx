@@ -47,7 +47,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex justify-center mb-8">
@@ -58,12 +58,12 @@ export default function AuthPage() {
           />
         </div>
         
-        <Card className="w-full shadow-sm border border-gray-200">
+        <Card className="w-full shadow-sm">
           <CardHeader className="space-y-1 pb-6">
-            <CardTitle className="text-2xl font-semibold text-gray-900 text-center">
+            <CardTitle className="text-2xl font-semibold text-center">
               {isLogin ? 'Sign in' : 'Create account'}
             </CardTitle>
-            <CardDescription className="text-center text-gray-600">
+            <CardDescription className="text-center">
               {isLogin
                 ? 'Enter your email and password to continue'
                 : 'Get started with your healthcare journey'}
@@ -73,7 +73,7 @@ export default function AuthPage() {
             <form onSubmit={handleSubmit} className="space-y-5">
               {!isLogin && (
                 <div className="space-y-2">
-                  <Label htmlFor="displayName" className="text-sm font-medium text-gray-700">
+                  <Label htmlFor="displayName" className="text-sm font-medium">
                     Display Name
                   </Label>
                   <Input
@@ -87,7 +87,7 @@ export default function AuthPage() {
                 </div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="email" className="text-sm font-medium">
                   Email
                 </Label>
                 <Input
@@ -101,7 +101,7 @@ export default function AuthPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="password" className="text-sm font-medium">
                   Password
                 </Label>
                 <PasswordInput

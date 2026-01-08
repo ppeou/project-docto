@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, FilePlusCorner } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { AppHeader } from '@/components/shared/AppHeader';
 
@@ -33,15 +33,14 @@ export default function ItinerariesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-background">
       <AppHeader title="Itineraries" />
       <main className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Healthcare Itineraries</h1>
           <Link to="/itineraries/create">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              New Itinerary
+            <Button size="icon" title="New Itinerary">
+              <FilePlusCorner className="h-5 w-5" />
             </Button>
           </Link>
         </div>

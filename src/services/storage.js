@@ -15,19 +15,16 @@ export async function uploadFile(file, path) {
       throw new Error('File size exceeds 10MB limit');
     }
 
-    const allowedTypes = [
+    // Allow any image type (more flexible for profile photos and different browsers)
+    const isImage = file.type.startsWith('image/');
+    const allowedNonImageTypes = [
       'application/pdf',
-      'image/jpeg',
-      'image/jpg',
-      'image/png',
-      'image/gif',
-      'image/webp',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'text/plain',
     ];
 
-    if (!allowedTypes.includes(file.type)) {
+    if (!isImage && !allowedNonImageTypes.includes(file.type)) {
       throw new Error('File type not allowed. Allowed: PDF, Images, Word docs, TXT');
     }
 

@@ -13,10 +13,19 @@ export function useAuth() {
       setUser(authUser);
       
       if (authUser) {
-        // Fetch user profile
-        const userDoc = await getDoc(doc(db, 'users', authUser.uid));
-        if (userDoc.exists()) {
-          setUserProfile({ id: userDoc.id, ...userDoc.data() });
+        try {
+          // Fetch user profile
+          const userDoc = await getDoc(doc(db, 'users', authUser.uid));
+          if (userDoc.exists()) {
+            setUserProfile({ id: userDoc.id, ...userDoc.data() });
+          } else {
+            // User document doesn't exist yet, but that's okay
+            setUserProfile(null);
+          }
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+          // Continue without profile data rather than blocking
+          setUserProfile(null);
         }
       } else {
         setUserProfile(null);

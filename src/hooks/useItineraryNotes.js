@@ -20,11 +20,21 @@ export function useItineraryNotes(itineraryId) {
       orderBy('created.on', 'desc')
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setNotes(data);
-      setLoading(false);
-    });
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        setNotes(data);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error in useItineraryNotes:', error);
+        if (error.code === 'permission-denied') {
+          setNotes([]);
+        }
+        setLoading(false);
+      }
+    );
 
     return () => unsubscribe();
   }, [itineraryId]);
