@@ -46,10 +46,32 @@
       "description": "Dosage information (e.g., '10mg', '1 tablet')"
     },
     "frequency": {
+      "type": "object",
+      "required": ["label", "intervalValue", "intervalUnit"],
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Human-readable frequency label (e.g., '3 times per day', 'Once daily')"
+        },
+        "intervalValue": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Numeric interval value"
+        },
+        "intervalUnit": {
+          "type": "string",
+          "enum": ["hour", "day", "week", "month", "as_needed"],
+          "description": "Unit of the interval"
+        }
+      },
+      "description": "Frequency of medication administration"
+    },
+    "frequencyText": {
       "type": "string",
-      "minLength": 1,
       "maxLength": 100,
-      "description": "Frequency of administration (e.g., 'Twice daily', 'Once a week', 'As needed')"
+      "description": "Legacy text frequency (for display/backward compatibility, optional)"
     },
     "quantity": {
       "type": "integer",
@@ -173,6 +195,45 @@
       "type": "boolean",
       "default": false,
       "description": "Soft delete flag"
+    },
+    "intakeRecords": {
+      "type": "array",
+      "description": "Array of medication intake records. If empty/null, tracking starts today.",
+      "items": {
+        "type": "object",
+        "required": ["takenAt"],
+        "properties": {
+          "takenAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO timestamp when medication was taken"
+          },
+          "markedBy": {
+            "type": "string",
+            "description": "User ID of person who marked medication as taken"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Optional notes"
+          }
+        }
+      }
+    },
+    "trackingStartDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when medication tracking should start (defaults to datePrescribed or today)"
+    },
+    "trackingEndDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Optional end date for medication tracking (e.g., painkiller for 30 days after surgery). Null means ongoing."
+    },
+    "trackingEnabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether medication intake tracking is enabled"
     }
   }
 }

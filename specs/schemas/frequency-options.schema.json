@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Frequency Option",
+  "description": "Medication frequency option document schema",
+  "type": "object",
+  "required": ["label", "intervalValue", "intervalUnit", "displayOrder"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique frequency option identifier"
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Human-readable frequency label (e.g., '3 times per day', 'Once daily')"
+    },
+    "intervalValue": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Numeric interval value"
+    },
+    "intervalUnit": {
+      "type": "string",
+      "enum": ["hour", "day", "week", "month", "as_needed"],
+      "description": "Unit of the interval"
+    },
+    "displayOrder": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Order for displaying in dropdown (lower = first)"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this option is active and should be shown"
+    },
+    "created": {
+      "type": "object",
+      "required": ["on"],
+      "properties": {
+        "on": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        }
+      }
+    },
+    "updated": {
+      "type": "object",
+      "required": ["on"],
+      "properties": {
+        "on": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp"
+        }
+      }
+    }
+  }
+}
+

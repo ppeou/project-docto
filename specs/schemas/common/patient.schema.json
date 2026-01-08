@@ -62,6 +62,59 @@
         ]
       },
       "description": "Array of patient addresses"
+    },
+    "vitalSigns": {
+      "type": "array",
+      "description": "Array of vital sign readings over time",
+      "items": {
+        "type": "object",
+        "required": ["recordedAt"],
+        "properties": {
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date/time when vital signs were actually taken (can be manually adjusted)"
+          },
+          "recordedBy": {
+            "type": "string",
+            "description": "User ID of person who recorded the vital signs"
+          },
+          "bloodPressure": {
+            "type": "object",
+            "properties": {
+              "systolic": {
+                "type": "integer",
+                "minimum": 50,
+                "maximum": 250,
+                "description": "Systolic blood pressure (mmHg)"
+              },
+              "diastolic": {
+                "type": "integer",
+                "minimum": 30,
+                "maximum": 150,
+                "description": "Diastolic blood pressure (mmHg)"
+              }
+            }
+          },
+          "weight": {
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 1000,
+            "description": "Weight in kilograms (kg)"
+          },
+          "height": {
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 3,
+            "description": "Height in meters (m)"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Optional notes about the vital signs reading"
+          }
+        }
+      }
     }
   }
 }

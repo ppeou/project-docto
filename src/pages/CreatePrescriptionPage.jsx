@@ -4,6 +4,7 @@ import { createPrescription } from '@/services/firestore';
 import { useItinerary } from '@/hooks/useItinerary';
 import { usePatients } from '@/hooks/usePatients';
 import { useDoctors } from '@/hooks/useDoctors';
+import { useFrequencyOptions } from '@/hooks/useFrequencyOptions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,6 +28,7 @@ export default function CreatePrescriptionPage() {
   const { itinerary } = useItinerary(itineraryId);
   const { patients, loading: patientsLoading } = usePatients();
   const { doctors, loading: doctorsLoading } = useDoctors();
+  const { frequencyOptions, loading: frequencyOptionsLoading } = useFrequencyOptions();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -36,8 +38,11 @@ export default function CreatePrescriptionPage() {
     medicationName: '',
     genericName: '',
     dosage: '',
-    frequency: '',
+    frequency: null, // Will store frequency object
     quantity: '30',
+    trackingStartDate: '',
+    trackingEndDate: '',
+    trackingEnabled: true,
     doctorId: '',
     pharmacyName: '',
     pharmacyPhone: '',
@@ -96,6 +101,15 @@ export default function CreatePrescriptionPage() {
       return;
     }
 
+    if (!formData.frequency) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Please select a frequency',
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -111,8 +125,11 @@ export default function CreatePrescriptionPage() {
         medicationName: formData.medicationName,
         genericName: formData.genericName || undefined,
         dosage: formData.dosage,
-        frequency: formData.frequency,
+        frequency: formData.frequency, // Frequency object { label, intervalValue, intervalUnit }
         quantity: parseInt(formData.quantity, 10),
+        trackingStartDate: formData.trackingStartDate || undefined,
+        trackingEndDate: formData.trackingEndDate || undefined,
+        trackingEnabled: formData.trackingEnabled,
         prescribedBy: {
           name: selectedDoctor.name,
           specialty: selectedDoctor.specialty || undefined,
@@ -252,13 +269,32 @@ export default function CreatePrescriptionPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="frequency">Intake Frequency *</Label>
-                    <Input
-                      id="frequency"
-                      value={formData.frequency}
-                      onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
-                      placeholder="e.g., Twice daily, Once a week"
+                    <Select
+                      value={formData.frequency ? JSON.stringify(formData.frequency) : ''}
+                      onValueChange={(value) => {
+                        const frequency = JSON.parse(value);
+                        setFormData({ ...formData, frequency });
+                      }}
+                      disabled={frequencyOptionsLoading}
                       required
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={frequencyOptionsLoading ? "Loading frequencies..." : "Select frequency"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {frequencyOptions.length === 0 ? (
+                          <SelectItem value="no-frequencies" disabled>
+                            {frequencyOptionsLoading ? "Loading..." : "No frequencies available"}
+                          </SelectItem>
+                        ) : (
+                          frequencyOptions.map((freq) => (
+                            <SelectItem key={freq.id} value={JSON.stringify({ label: freq.label, intervalValue: freq.intervalValue, intervalUnit: freq.intervalUnit })}>
+                              {freq.label}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
@@ -421,6 +457,44 @@ export default function CreatePrescriptionPage() {
                   placeholder="e.g., Take with food, Avoid alcohol"
                   rows={3}
                 />
+              </div>
+
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="font-semibold">Medication Tracking</h3>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="trackingEnabled"
+                    checked={formData.trackingEnabled}
+                    onChange={(e) => setFormData({ ...formData, trackingEnabled: e.target.checked })}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <Label htmlFor="trackingEnabled">Enable medication intake tracking</Label>
+                </div>
+                {formData.trackingEnabled && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="trackingStartDate">Tracking Start Date</Label>
+                      <Input
+                        id="trackingStartDate"
+                        type="date"
+                        value={formData.trackingStartDate}
+                        onChange={(e) => setFormData({ ...formData, trackingStartDate: e.target.value })}
+                      />
+                      <p className="text-xs text-muted-foreground">Leave empty to start from today</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="trackingEndDate">Tracking End Date (Optional)</Label>
+                      <Input
+                        id="trackingEndDate"
+                        type="date"
+                        value={formData.trackingEndDate}
+                        onChange={(e) => setFormData({ ...formData, trackingEndDate: e.target.value })}
+                      />
+                      <p className="text-xs text-muted-foreground">For limited-time medications (e.g., painkillers after surgery)</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-4 border-t pt-4">

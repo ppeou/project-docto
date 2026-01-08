@@ -8,8 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { ErrorMessage } from '@/components/shared/ErrorMessage';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Edit, Trash2, Pill, Calendar, Phone, User, RefreshCw } from 'lucide-react';
-import { formatDate } from '@/lib/utils';
+import { ArrowLeft, Edit, Trash2, Pill, Calendar, Phone, User, RefreshCw, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { formatDate, formatDateTime } from '@/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,9 +18,12 @@ export default function PrescriptionDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { prescription, loading, error } = usePrescription(id);
+  const { prescription, loading, error, markTaken, unmarkTaken, medicationStatus } = usePrescription(id);
   const [isRefillDialogOpen, setIsRefillDialogOpen] = useState(false);
   const [refillDate, setRefillDate] = useState('');
+  const [isMarkDialogOpen, setIsMarkDialogOpen] = useState(false);
+  const [markNotes, setMarkNotes] = useState('');
+  const [marking, setMarking] = useState(false);
 
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this prescription?')) return;
@@ -177,7 +180,7 @@ export default function PrescriptionDetailPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Frequency</p>
-                <p className="font-medium">{prescription.frequency}</p>
+                <p className="font-medium">{prescription.frequency?.label || prescription.frequencyText || prescription.frequency || 'Not specified'}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Quantity</p>
@@ -342,6 +345,196 @@ export default function PrescriptionDetailPage() {
             </Card>
           )}
         </div>
+
+        {/* Medication Intake Tracking */}
+        {prescription.trackingEnabled !== false && prescription.frequency && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Medication Intake Tracking</CardTitle>
+              <CardDescription>
+                Track when medication is taken
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {medicationStatus && (
+                <>
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <p className="font-medium">Today's Status</p>
+                      <p className="text-sm text-muted-foreground">
+                        {medicationStatus.todayCount > 0 ? (
+                          <>Taken {medicationStatus.todayCount} time{medicationStatus.todayCount > 1 ? 's' : ''} today</>
+                        ) : (
+                          <>Not taken today</>
+                        )}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {medicationStatus.canMark ? (
+                        <Badge variant="default" className="bg-green-500">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Can Mark
+                        </Badge>
+                      ) : medicationStatus.todayRecords.length > 0 ? (
+                        <Badge variant="default" className="bg-blue-500">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Completed
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">
+                          <Clock className="h-3 w-3 mr-1" />
+                          Wait
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  {medicationStatus.canMark && (
+                    <Dialog open={isMarkDialogOpen} onOpenChange={setIsMarkDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="w-full">
+                          <CheckCircle2 className="mr-2 h-4 w-4" />
+                          Mark Medication as Taken
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Mark Medication as Taken</DialogTitle>
+                          <DialogDescription>
+                            Record that this medication was taken
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="markNotes">Notes (Optional)</Label>
+                            <textarea
+                              id="markNotes"
+                              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              value={markNotes}
+                              onChange={(e) => setMarkNotes(e.target.value)}
+                              placeholder="e.g., Taken with breakfast"
+                              rows={3}
+                            />
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setIsMarkDialogOpen(false);
+                                setMarkNotes('');
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              onClick={async () => {
+                                try {
+                                  setMarking(true);
+                                  await markTaken(markNotes);
+                                  setIsMarkDialogOpen(false);
+                                  setMarkNotes('');
+                                  toast({
+                                    title: 'Success',
+                                    description: 'Medication marked as taken',
+                                  });
+                                } catch (err) {
+                                  toast({
+                                    variant: 'destructive',
+                                    title: 'Error',
+                                    description: err.message || 'Failed to mark medication',
+                                  });
+                                } finally {
+                                  setMarking(false);
+                                }
+                              }}
+                              disabled={marking}
+                            >
+                              {marking ? 'Marking...' : 'Mark as Taken'}
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+
+                  {medicationStatus.lastTaken && (
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-sm font-medium">Last Taken</p>
+                      <p className="text-sm text-muted-foreground">
+                        {formatDateTime(medicationStatus.lastTaken.takenAt)}
+                        {medicationStatus.lastTaken.notes && (
+                          <> - {medicationStatus.lastTaken.notes}</>
+                        )}
+                      </p>
+                    </div>
+                  )}
+
+                  {medicationStatus.todayRecords.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Today's Records</p>
+                      <div className="space-y-2">
+                        {medicationStatus.todayRecords.map((record, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-2 border rounded">
+                            <div>
+                              <p className="text-sm">{formatDateTime(record.takenAt)}</p>
+                              {record.notes && (
+                                <p className="text-xs text-muted-foreground">{record.notes}</p>
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                if (confirm('Remove this record?')) {
+                                  try {
+                                    await unmarkTaken(idx);
+                                    toast({
+                                      title: 'Success',
+                                      description: 'Record removed',
+                                    });
+                                  } catch (err) {
+                                    toast({
+                                      variant: 'destructive',
+                                      title: 'Error',
+                                      description: err.message || 'Failed to remove record',
+                                    });
+                                  }
+                                }
+                              }}
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {prescription.intakeRecords && prescription.intakeRecords.length > 0 && (
+                    <div className="border-t pt-4">
+                      <p className="text-sm font-medium mb-2">Recent History</p>
+                      <div className="space-y-1 max-h-48 overflow-y-auto">
+                        {prescription.intakeRecords.slice(0, 10).map((record, idx) => {
+                          const recordDate = new Date(record.takenAt);
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const isToday = recordDate >= today;
+                          
+                          return (
+                            <div key={idx} className="text-xs text-muted-foreground p-2 border rounded">
+                              {formatDateTime(record.takenAt)}
+                              {record.notes && ` - ${record.notes}`}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Actions */}
         <Card className="mt-6">

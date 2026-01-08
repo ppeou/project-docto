@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
-import { getPrescription } from '@/services/firestore';
+import { 
+  getPrescription, 
+  markMedicationTaken, 
+  unmarkMedicationTaken,
+  getMedicationStatus 
+} from '@/services/firestore';
 
 export function usePrescription(id) {
   const [prescription, setPrescription] = useState(null);
@@ -29,6 +34,38 @@ export function usePrescription(id) {
     fetchPrescription();
   }, [id]);
 
-  return { prescription, loading, error };
+  const markTaken = async (notes = '') => {
+    if (!prescription) return;
+    try {
+      await markMedicationTaken(id, notes);
+      // Refetch to update UI
+      const updated = await getPrescription(id);
+      setPrescription(updated);
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const unmarkTaken = async (recordIndex = null) => {
+    if (!prescription) return;
+    try {
+      await unmarkMedicationTaken(id, recordIndex);
+      const updated = await getPrescription(id);
+      setPrescription(updated);
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const medicationStatus = prescription ? getMedicationStatus(prescription) : null;
+
+  return { 
+    prescription, 
+    loading, 
+    error, 
+    markTaken, 
+    unmarkTaken, 
+    medicationStatus 
+  };
 }
 

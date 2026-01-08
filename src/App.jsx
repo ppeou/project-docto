@@ -18,6 +18,9 @@ import SettingsPage from './pages/SettingsPage';
 import PatientsPage from './pages/PatientsPage';
 import DoctorsPage from './pages/DoctorsPage';
 import SpecialtiesPage from './pages/SpecialtiesPage';
+import InitializeFrequencyOptionsPage from './pages/InitializeFrequencyOptionsPage';
+import AdminCollectionDeletionPage from './pages/AdminCollectionDeletionPage';
+import AdminSeedDataPage from './pages/AdminSeedDataPage';
 import { LoadingSpinner } from './components/shared/LoadingSpinner';
 
 function ProtectedRoute({ children }) {
@@ -166,6 +169,30 @@ function App() {
           element={
             <ProtectedRoute>
               <SpecialtiesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/init-frequency-options"
+          element={
+            <ProtectedRoute>
+              <InitializeFrequencyOptionsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/collections"
+          element={
+            <ProtectedRoute>
+              <AdminCollectionDeletionPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/seed-data"
+          element={
+            <ProtectedRoute>
+              <AdminSeedDataPage />
             </ProtectedRoute>
           }
         />

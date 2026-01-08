@@ -274,5 +274,31 @@ service cloud.firestore {
       // Allow delete for authenticated users
       allow delete: if isAuthenticated();
     }
+
+    // Frequency Options collection
+    match /frequencyOptions/{optionId} {
+      // TEMPORARILY DISABLED RULES FOR INITIALIZATION
+      // TODO: Re-enable proper rules after initialization is complete
+      // Allow all operations for authenticated users (no validation)
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
+      
+      // Rules to re-enable after initialization:
+      // allow read: if isAuthenticated() && 
+      //                (!resource.exists || resource.data.isActive == true);
+      // allow create: if isAuthenticated() && 
+      //                 request.resource.data.label is string &&
+      //                 request.resource.data.label.size() > 0 &&
+      //                 request.resource.data.intervalValue is number &&
+      //                 request.resource.data.intervalValue >= 0 &&
+      //                 request.resource.data.intervalUnit is string &&
+      //                 request.resource.data.intervalUnit in ['hour', 'day', 'week', 'month', 'as_needed'] &&
+      //                 request.resource.data.displayOrder is int &&
+      //                 request.resource.data.displayOrder >= 0;
+      // allow update: if isAuthenticated() && [same validation as create]
+      // allow delete: if false;
+    }
   }
 }

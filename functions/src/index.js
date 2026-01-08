@@ -59,6 +59,65 @@ exports.onAppointmentCreated = functions.firestore
     return null;
   });
 
+// HTTP callable function - initialize frequency options (one-time setup)
+exports.initializeFrequencyOptions = functions.https.onCall(async (data, context) => {
+  // Optional: Add authentication check if you want to restrict who can call this
+  // if (!context.auth) {
+  //   throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+  // }
+
+  const FREQUENCY_OPTIONS = [
+    { label: "Every 4 hours", intervalValue: 4, intervalUnit: "hour", displayOrder: 1 },
+    { label: "Every 6 hours", intervalValue: 6, intervalUnit: "hour", displayOrder: 2 },
+    { label: "Every 8 hours", intervalValue: 8, intervalUnit: "hour", displayOrder: 3 },
+    { label: "Every 12 hours", intervalValue: 12, intervalUnit: "hour", displayOrder: 4 },
+    { label: "4 times per day", intervalValue: 6, intervalUnit: "hour", displayOrder: 5 },
+    { label: "3 times per day", intervalValue: 8, intervalUnit: "hour", displayOrder: 6 },
+    { label: "2 times per day", intervalValue: 12, intervalUnit: "hour", displayOrder: 7 },
+    { label: "Once daily", intervalValue: 1, intervalUnit: "day", displayOrder: 8 },
+    { label: "Once per day", intervalValue: 1, intervalUnit: "day", displayOrder: 9 },
+    { label: "Once per week", intervalValue: 7, intervalUnit: "day", displayOrder: 10 },
+    { label: "Twice per week", intervalValue: 3.5, intervalUnit: "day", displayOrder: 11 },
+    { label: "Every 2 weeks", intervalValue: 14, intervalUnit: "day", displayOrder: 12 },
+    { label: "Once per month", intervalValue: 1, intervalUnit: "month", displayOrder: 13 },
+    { label: "Every 2 months", intervalValue: 2, intervalUnit: "month", displayOrder: 14 },
+    { label: "As needed", intervalValue: null, intervalUnit: "as_needed", displayOrder: 15 },
+  ];
+
+  const results = { added: 0, skipped: 0, errors: [] };
+
+  for (const option of FREQUENCY_OPTIONS) {
+    try {
+      const docId = option.label.toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '');
+      
+      const docRef = admin.firestore().collection('frequencyOptions').doc(docId);
+      const docSnap = await docRef.get();
+      
+      if (!docSnap.exists) {
+        await docRef.set({
+          ...option,
+          isActive: true,
+          created: {
+            on: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          updated: {
+            on: admin.firestore.FieldValue.serverTimestamp(),
+          },
+        });
+        results.added++;
+      } else {
+        results.skipped++;
+      }
+    } catch (error) {
+      results.errors.push({ label: option.label, error: error.message });
+    }
+  }
+
+  return results;
+});
+
 // HTTP callable function - send custom email
 exports.sendCustomEmail = functions.https.onCall(async (data, context) => {
   if (!context.auth) {

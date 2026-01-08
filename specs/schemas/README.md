@@ -9,14 +9,15 @@ This directory contains JSON Schema definitions for all Firestore collections in
 - `itineraries.schema.json` - Healthcare itinerary documents
 - `itinerary-shares.schema.json` - Itinerary sharing documents
 - `appointments.schema.json` - Doctor appointment documents
-- `prescriptions.schema.json` - Prescription documents
+- `prescriptions.schema.json` - Prescription documents (includes medication intake tracking)
 - `doctor-notes.schema.json` - Doctor note documents
 - `invitations.schema.json` - Invitation documents
+- `frequency-options.schema.json` - Medication frequency option documents (reference data)
 - `enums.schema.json` - Enumeration definitions
 
 ### Common Schemas (Reusable)
 Located in `common/` directory:
-- `patient.schema.json` - Patient information (used in itineraries) - includes arrays for phones, emails, websites, addresses
+- `patient.schema.json` - Patient information (used in itineraries) - includes arrays for phones, emails, websites, addresses, and vital signs tracking
 - `doctor.schema.json` - Doctor information (used in appointments and prescriptions) - includes arrays for phones, emails, websites
 - `address.schema.json` - Address information (used in appointments and clinics) - includes mapUrls array
 - `phone-item.schema.json` - Phone number item with type and primary flag
