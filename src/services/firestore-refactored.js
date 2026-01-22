@@ -224,19 +224,24 @@ export const subscribeToUserDoctors = (userId, callback) => {
 // Frequency Options
 // ========================================
 
-import { collection, query, where, orderBy, getDocs, onSnapshot } from 'firebase/firestore';
-
 export const getFrequencyOptions = async () => {
-  const q = query(
-    collection(db, 'frequencyOptions'),
-    where('isActive', '==', true),
-    orderBy('displayOrder', 'asc')
-  );
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const repo = getRepository('frequencyOptions');
+  return new Promise((resolve, reject) => {
+    // Frequency options don't have userId filtering, so we need a custom query
+    const { collection, query, where, orderBy, getDocs } = require('firebase/firestore');
+    const q = query(
+      collection(db, 'frequencyOptions'),
+      where('isActive', '==', true),
+      orderBy('displayOrder', 'asc')
+    );
+    getDocs(q).then((snapshot) => {
+      resolve(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }).catch(reject);
+  });
 };
 
 export const subscribeToFrequencyOptions = (callback) => {
+  const { collection, query, where, orderBy, onSnapshot } = require('firebase/firestore');
   const q = query(
     collection(db, 'frequencyOptions'),
     where('isActive', '==', true),

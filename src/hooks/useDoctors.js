@@ -1,26 +1,13 @@
-import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
-import { subscribeToUserDoctors } from '@/services/firestore';
+import { useEntitySubscription } from './useEntitySubscription';
 
+/**
+ * Hook for fetching user doctors
+ * Uses generic entity subscription hook (DRY)
+ */
 export function useDoctors() {
   const { user } = useAuth();
-  const [doctors, setDoctors] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!user) {
-      setDoctors([]);
-      setLoading(false);
-      return;
-    }
-
-    const unsubscribe = subscribeToUserDoctors(user.uid, (data) => {
-      setDoctors(data);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
+  const { data: doctors, loading } = useEntitySubscription('doctors', user?.uid);
 
   return { doctors, loading };
 }

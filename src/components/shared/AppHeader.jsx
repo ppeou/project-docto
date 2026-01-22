@@ -2,9 +2,17 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { signOut } from '@/services/auth';
+import { ADMIN_USER_IDS } from '@/services/admin';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Stethoscope, Calendar, FileText, Logs, LogOut, Menu, X } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { User, Stethoscope, Calendar, FileText, Logs, LogOut, Menu, X, Shield, Database, Trash2, Bell, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function AppHeader({ title }) {
@@ -15,6 +23,8 @@ export function AppHeader({ title }) {
   const initials = userProfile?.displayName
     ? userProfile.displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : user?.email?.[0].toUpperCase() || 'U';
+
+  const isAdmin = user && ADMIN_USER_IDS.includes(user.uid);
 
   const handleSignOut = async () => {
     await signOut();
@@ -27,6 +37,13 @@ export function AppHeader({ title }) {
     { path: '/doctors', icon: Stethoscope, label: 'Doctors' },
     { path: '/calendar', icon: Calendar, label: 'Calendar' },
     { path: '/specialties', icon: Logs, label: 'Specialties' },
+  ];
+
+  const adminMenuItems = [
+    { path: '/admin/seed-data', icon: Database, label: 'Seed Data' },
+    { path: '/admin/collections', icon: Trash2, label: 'Delete Collections' },
+    { path: '/admin/notifications', icon: Bell, label: 'Notification Settings' },
+    { path: '/admin/init-frequency-options', icon: Clock, label: 'Frequency Options' },
   ];
 
   const handleNavClick = () => {
@@ -82,6 +99,45 @@ export function AppHeader({ title }) {
                   </Link>
                 );
               })}
+              
+              {/* Admin Dropdown Menu */}
+              {isAdmin && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant={location.pathname.startsWith('/admin') ? 'default' : 'ghost'}
+                      size="icon"
+                      className={cn(
+                        'h-10 w-10',
+                        location.pathname.startsWith('/admin') && 'bg-[#74C947] hover:bg-[#66b83d] text-white'
+                      )}
+                      title="Admin"
+                    >
+                      <Shield className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {adminMenuItems.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = location.pathname === item.path;
+                      return (
+                        <DropdownMenuItem key={item.path} asChild>
+                          <Link
+                            to={item.path}
+                            className={cn(
+                              'flex items-center gap-2 cursor-pointer',
+                              isActive && 'bg-accent'
+                            )}
+                          >
+                            <Icon className="h-4 w-4" />
+                            <span>{item.label}</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </nav>
           </div>
           <div className="flex items-center gap-4">
@@ -151,6 +207,37 @@ export function AppHeader({ title }) {
                     </Link>
                   );
                 })}
+                
+                {/* Admin Section in Mobile Menu */}
+                {isAdmin && (
+                  <>
+                    <div className="pt-4 mt-4 border-t border-border">
+                      <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase">
+                        Admin
+                      </div>
+                      {adminMenuItems.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = location.pathname === item.path;
+                        return (
+                          <Link
+                            key={item.path}
+                            to={item.path}
+                            onClick={handleNavClick}
+                            className={cn(
+                              'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
+                              isActive
+                                ? 'bg-[#74C947] text-white'
+                                : 'hover:bg-muted text-foreground'
+                            )}
+                          >
+                            <Icon className="h-5 w-5" />
+                            <span className="font-medium">{item.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
               </nav>
 
               {/* Mobile Menu Footer */}

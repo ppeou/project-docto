@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { getDocs, collection } from 'firebase/firestore';
+import { useAuth } from '@/hooks/useAuth';
 import { AppHeader } from '@/components/shared/AppHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,13 +16,19 @@ import {
   generateSeedAppointments,
   generateSeedPrescriptions,
   generateSeedDoctorNotes,
+  generateSeedInvitations,
+  generateSeedItineraryShares,
   generateAllSeedData,
   initializeFrequencyOptions,
   ADMIN_USER_IDS,
 } from '@/services/admin';
-import { Database, Users, Stethoscope, FileText, Calendar, Pill, FileEdit, Play, Clock } from 'lucide-react';
+import { Database, Users, Stethoscope, FileText, Calendar, Pill, FileEdit, Play, Clock, Mail, Share2, Bell } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function AdminSeedDataPage() {
+  const { user } = useAuth();
+  const isAdmin = user && ADMIN_USER_IDS.includes(user.uid);
+  
   const [counts, setCounts] = useState({
     patients: 10,
     doctors: 10,
@@ -29,6 +36,8 @@ export default function AdminSeedDataPage() {
     appointments: 20,
     prescriptions: 15,
     notes: 20,
+    invitations: 10,
+    itineraryShares: 10,
   });
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(null);
@@ -38,7 +47,16 @@ export default function AdminSeedDataPage() {
     setLoading(true);
     setGenerating('all');
     try {
-      const results = await generateAllSeedData(counts);
+      // Use current authenticated user ID - must be an admin
+      if (!user) {
+        throw new Error('You must be logged in to generate seed data');
+      }
+      if (!isAdmin) {
+        throw new Error('You must be an admin to generate seed data');
+      }
+      const targetUserId = user.uid;
+      console.log('Generating seed data as admin user:', targetUserId);
+      const results = await generateAllSeedData(counts, targetUserId);
       
       const summary = Object.entries(results)
         .map(([key, value]) => `${key}: ${value.length}`)
@@ -93,6 +111,24 @@ export default function AdminSeedDataPage() {
   const handleGenerateIndividual = async (type, generator) => {
     setGenerating(type);
     try {
+      // Use current authenticated user ID - must be an admin
+      if (!user) {
+        toast({
+          title: 'Error',
+          description: 'You must be logged in to generate seed data',
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (!isAdmin) {
+        toast({
+          title: 'Error',
+          description: 'You must be an admin to generate seed data',
+          variant: 'destructive',
+        });
+        return;
+      }
+      const targetUserId = user.uid;
       let result;
       const count = counts[type] || 10;
 
@@ -110,7 +146,7 @@ export default function AdminSeedDataPage() {
           return;
         }
 
-        result = await generator(count, patientIds);
+        result = await generator(count, patientIds, [], targetUserId);
       } else if (type === 'appointments') {
         // Need to get existing itineraries and doctors
         const [itinerariesSnapshot, doctorsSnapshot] = await Promise.all([
@@ -129,7 +165,7 @@ export default function AdminSeedDataPage() {
           return;
         }
 
-        result = await generator(count, itineraryIds, doctorIds);
+        result = await generator(count, itineraryIds, doctorIds, targetUserId);
       } else if (type === 'prescriptions') {
         // Need to get existing itineraries and doctors
         const [itinerariesSnapshot, doctorsSnapshot] = await Promise.all([
@@ -148,7 +184,7 @@ export default function AdminSeedDataPage() {
           return;
         }
 
-        result = await generator(count, itineraryIds, doctorIds);
+        result = await generator(count, itineraryIds, doctorIds, targetUserId);
       } else if (type === 'notes') {
         // Need to get existing appointments and itineraries
         const [appointmentsSnapshot, itinerariesSnapshot] = await Promise.all([
@@ -167,9 +203,40 @@ export default function AdminSeedDataPage() {
           return;
         }
 
-        result = await generator(count, appointmentIds, itineraryIds);
+        result = await generator(count, appointmentIds, itineraryIds, targetUserId);
+      } else if (type === 'invitations') {
+        // Need to get existing itineraries
+        const itinerariesSnapshot = await getDocs(collection(db, 'itineraries'));
+        const itineraryIds = itinerariesSnapshot.docs.map((doc) => doc.id);
+
+        if (itineraryIds.length === 0) {
+          toast({
+            title: 'Error',
+            description: 'Please generate itineraries first',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        result = await generator(count, itineraryIds, targetUserId);
+      } else if (type === 'itineraryShares') {
+        // Need to get existing itineraries
+        const itinerariesSnapshot = await getDocs(collection(db, 'itineraries'));
+        const itineraryIds = itinerariesSnapshot.docs.map((doc) => doc.id);
+
+        if (itineraryIds.length === 0) {
+          toast({
+            title: 'Error',
+            description: 'Please generate itineraries first',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        result = await generator(count, itineraryIds, [], targetUserId);
       } else {
-        result = await generator(count);
+        // For patients and doctors, pass targetUserId
+        result = await generator(count, targetUserId);
       }
 
       toast({
@@ -231,12 +298,34 @@ export default function AdminSeedDataPage() {
       generator: generateSeedDoctorNotes,
       description: 'Generate doctor notes (requires appointments and itineraries)',
     },
+    {
+      type: 'invitations',
+      label: 'Invitations',
+      icon: Mail,
+      generator: generateSeedInvitations,
+      description: 'Generate itinerary invitations (requires itineraries)',
+    },
+    {
+      type: 'itineraryShares',
+      label: 'Itinerary Shares',
+      icon: Share2,
+      generator: generateSeedItineraryShares,
+      description: 'Generate itinerary shares (requires itineraries)',
+    },
   ];
 
   return (
     <div className="min-h-screen bg-background">
       <AppHeader title="Admin - Seed Data" />
       <main className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="mb-6 flex gap-4">
+          <Link to="/admin/notifications">
+            <Button variant="outline">
+              <Bell className="mr-2 h-4 w-4" />
+              Notification Settings
+            </Button>
+          </Link>
+        </div>
         <div className="space-y-6">
           <Card>
             <CardHeader>

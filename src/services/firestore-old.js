@@ -1,231 +1,503 @@
-/**
- * Refactored Firestore service using Repository pattern
- * Maintains backward compatibility with existing code
- * Follows SOLID principles and DRY
- */
-
-import { getRepository } from './repositories/EntityRepositoryFactory';
-import { Timestamp } from 'firebase/firestore';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  serverTimestamp,
+  Timestamp,
+} from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
-import { serverTimestamp } from 'firebase/firestore';
 
-// ========================================
-// Itineraries - Using Repository Pattern
-// ========================================
-
+// Itineraries
 export const createItinerary = async (data) => {
-  const repo = getRepository('itineraries');
-  return await repo.create(data);
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not authenticated');
+
+  const docRef = await addDoc(collection(db, 'itineraries'), {
+    ...data,
+    created: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+    updated: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+    isDeleted: false,
+  });
+
+  return docRef.id;
 };
 
 export const getItinerary = async (id) => {
-  const repo = getRepository('itineraries');
-  return await repo.get(id);
+  const docRef = doc(db, 'itineraries', id);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return { id: docSnap.id, ...docSnap.data() };
+  }
+  return null;
 };
 
 export const updateItinerary = async (id, data) => {
-  const repo = getRepository('itineraries');
-  return await repo.update(id, data);
-};
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not authenticated');
 
-export const deleteItinerary = async (id) => {
-  const repo = getRepository('itineraries');
-  return await repo.delete(id);
-};
-
-export const getUserItineraries = async (userId) => {
-  const repo = getRepository('itineraries');
-  return new Promise((resolve, reject) => {
-    const unsubscribe = repo.subscribeToUserDocuments(userId, (data) => {
-      unsubscribe();
-      resolve(data);
-    });
+  await updateDoc(doc(db, 'itineraries', id), {
+    ...data,
+    updated: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
   });
 };
 
-export const subscribeToUserItineraries = (userId, callback) => {
-  const repo = getRepository('itineraries');
-  return repo.subscribeToUserDocuments(userId, callback);
+export const deleteItinerary = async (id) => {
+  await updateDoc(doc(db, 'itineraries', id), {
+    isDeleted: true,
+    updated: {
+      by: auth.currentUser.uid,
+      on: serverTimestamp(),
+    },
+  });
 };
 
-// ========================================
-// Appointments - Using Repository Pattern
-// ========================================
+export const getUserItineraries = async (userId) => {
+  const q = query(
+    collection(db, 'itineraries'),
+    where('created.by', '==', userId),
+    where('isDeleted', '==', false),
+    orderBy('created.on', 'desc')
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+};
 
+export const subscribeToUserItineraries = (userId, callback) => {
+  const q = query(
+    collection(db, 'itineraries'),
+    where('created.by', '==', userId),
+    where('isDeleted', '==', false),
+    orderBy('created.on', 'desc')
+  );
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      callback(data);
+    },
+    (error) => {
+      console.error('Error in subscribeToUserItineraries:', error);
+      // Return empty array on permission error
+      if (error.code === 'permission-denied') {
+        callback([]);
+      }
+    }
+  );
+};
+
+// Appointments
 export const createAppointment = async (data) => {
-  const repo = getRepository('appointments');
-  return await repo.create(data);
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not authenticated');
+
+  const docRef = await addDoc(collection(db, 'appointments'), {
+    ...data,
+    appointmentDate: Timestamp.fromDate(new Date(data.appointmentDate)),
+    created: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+    updated: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+    isDeleted: false,
+    status: 1, // scheduled
+  });
+
+  return docRef.id;
 };
 
 export const getAppointment = async (id) => {
-  const repo = getRepository('appointments');
-  return await repo.get(id);
+  const docRef = doc(db, 'appointments', id);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return { id: docSnap.id, ...docSnap.data() };
+  }
+  return null;
 };
 
 export const updateAppointment = async (id, data) => {
-  const repo = getRepository('appointments');
-  return await repo.update(id, data);
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not authenticated');
+
+  const updateData = { ...data };
+  if (updateData.appointmentDate) {
+    updateData.appointmentDate = Timestamp.fromDate(new Date(updateData.appointmentDate));
+  }
+
+  await updateDoc(doc(db, 'appointments', id), {
+    ...updateData,
+    updated: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+  });
 };
 
 export const deleteAppointment = async (id) => {
-  const repo = getRepository('appointments');
-  return await repo.delete(id);
+  await updateDoc(doc(db, 'appointments', id), {
+    isDeleted: true,
+    updated: {
+      by: auth.currentUser.uid,
+      on: serverTimestamp(),
+    },
+  });
 };
 
 export const subscribeToItineraryAppointments = (itineraryId, callback) => {
-  const repo = getRepository('appointments');
-  return repo.subscribeToFilteredDocuments('itineraryId', itineraryId, callback, 'appointmentDate', 'asc');
+  const q = query(
+    collection(db, 'appointments'),
+    where('itineraryId', '==', itineraryId),
+    where('isDeleted', '==', false),
+    orderBy('appointmentDate', 'asc')
+  );
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      callback(data);
+    },
+    (error) => {
+      console.error('Error in subscribeToItineraryAppointments:', error);
+      if (error.code === 'permission-denied') {
+        callback([]);
+      }
+    }
+  );
 };
 
-// ========================================
-// Prescriptions - Using Repository Pattern
-// ========================================
-
+// Prescriptions
 export const createPrescription = async (data) => {
-  const repo = getRepository('prescriptions');
-  return await repo.create(data);
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not authenticated');
+
+  const docRef = await addDoc(collection(db, 'prescriptions'), {
+    ...data,
+    frequency: data.frequency, // Should be { label, intervalValue, intervalUnit }
+    datePrescribed: Timestamp.fromDate(new Date(data.datePrescribed)),
+    nextRefillDate: data.nextRefillDate ? Timestamp.fromDate(new Date(data.nextRefillDate)) : null,
+    intakeRecords: [],
+    trackingStartDate: data.trackingStartDate || new Date().toISOString().split('T')[0],
+    trackingEndDate: data.trackingEndDate || null,
+    trackingEnabled: data.trackingEnabled !== false,
+    created: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+    updated: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+    isDeleted: false,
+    status: 1, // active
+  });
+
+  return docRef.id;
 };
 
 export const getPrescription = async (id) => {
-  const repo = getRepository('prescriptions');
-  return await repo.get(id);
+  const docRef = doc(db, 'prescriptions', id);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return { id: docSnap.id, ...docSnap.data() };
+  }
+  return null;
 };
 
 export const updatePrescription = async (id, data) => {
-  const repo = getRepository('prescriptions');
-  return await repo.update(id, data);
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not authenticated');
+
+  const updateData = { ...data };
+  if (updateData.datePrescribed) {
+    updateData.datePrescribed = Timestamp.fromDate(new Date(updateData.datePrescribed));
+  }
+  if (updateData.nextRefillDate) {
+    updateData.nextRefillDate = Timestamp.fromDate(new Date(updateData.nextRefillDate));
+  }
+
+  await updateDoc(doc(db, 'prescriptions', id), {
+    ...updateData,
+    updated: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+  });
 };
 
 export const deletePrescription = async (id) => {
-  const repo = getRepository('prescriptions');
-  return await repo.delete(id);
+  await updateDoc(doc(db, 'prescriptions', id), {
+    isDeleted: true,
+    updated: {
+      by: auth.currentUser.uid,
+      on: serverTimestamp(),
+    },
+  });
 };
 
 export const subscribeToItineraryPrescriptions = (itineraryId, callback) => {
-  const repo = getRepository('prescriptions');
-  return repo.subscribeToFilteredDocuments('itineraryId', itineraryId, callback, 'datePrescribed', 'desc');
+  const q = query(
+    collection(db, 'prescriptions'),
+    where('itineraryId', '==', itineraryId),
+    where('isDeleted', '==', false),
+    orderBy('datePrescribed', 'desc')
+  );
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      callback(data);
+    },
+    (error) => {
+      console.error('Error in subscribeToItineraryPrescriptions:', error);
+      if (error.code === 'permission-denied') {
+        callback([]);
+      }
+    }
+  );
 };
 
-// ========================================
-// Doctor Notes - Using Repository Pattern
-// ========================================
-
+// Doctor Notes
 export const createDoctorNote = async (data) => {
-  const repo = getRepository('doctorNotes');
-  return await repo.create(data);
-};
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not authenticated');
 
-export const getDoctorNote = async (id) => {
-  const repo = getRepository('doctorNotes');
-  return await repo.get(id);
-};
+  const docRef = await addDoc(collection(db, 'doctorNotes'), {
+    ...data,
+    created: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+    updated: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+    isDeleted: false,
+  });
 
-export const updateDoctorNote = async (id, data) => {
-  const repo = getRepository('doctorNotes');
-  return await repo.update(id, data);
-};
-
-export const deleteDoctorNote = async (id) => {
-  const repo = getRepository('doctorNotes');
-  return await repo.delete(id);
+  return docRef.id;
 };
 
 export const subscribeToAppointmentNotes = (appointmentId, callback) => {
-  const repo = getRepository('doctorNotes');
-  return repo.subscribeToFilteredDocuments('appointmentId', appointmentId, callback, 'created.on', 'desc');
+  const q = query(
+    collection(db, 'doctorNotes'),
+    where('appointmentId', '==', appointmentId),
+    where('isDeleted', '==', false),
+    orderBy('created.on', 'desc')
+  );
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      callback(data);
+    },
+    (error) => {
+      console.error('Error in subscribeToAppointmentNotes:', error);
+      if (error.code === 'permission-denied') {
+        callback([]);
+      }
+    }
+  );
 };
 
-// ========================================
-// Patients - Using Repository Pattern
-// ========================================
-
+// Patients
 export const createPatient = async (data) => {
-  const repo = getRepository('patients');
-  return await repo.create(data);
-};
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not authenticated');
 
-export const getPatient = async (id) => {
-  const repo = getRepository('patients');
-  return await repo.get(id);
+  const docRef = await addDoc(collection(db, 'patients'), {
+    ...data,
+    userId: user.uid,
+    created: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+    updated: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+    isDeleted: false,
+  });
+
+  return docRef.id;
 };
 
 export const updatePatient = async (id, data) => {
-  const repo = getRepository('patients');
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not authenticated');
+
   // Get existing document to preserve userId and created fields
-  const existing = await repo.get(id);
-  if (!existing) {
+  const docRef = doc(db, 'patients', id);
+  const docSnap = await getDoc(docRef);
+  
+  if (!docSnap.exists()) {
     throw new Error('Patient not found');
   }
+
+  const existingData = docSnap.data();
   
-  // Preserve userId and created fields
-  const updateData = {
-    ...data,
-    userId: existing.userId,
-    created: existing.created,
-  };
-  
-  return await repo.update(id, updateData);
+  // Remove fields that shouldn't be updated, but preserve userId and created
+  const { userId, created, isDeleted, ...updateData } = data;
+
+  await updateDoc(docRef, {
+    ...updateData,
+    userId: existingData.userId, // Preserve userId
+    created: existingData.created, // Preserve created
+    updated: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+  });
 };
 
 export const deletePatient = async (id) => {
-  const repo = getRepository('patients');
-  return await repo.delete(id);
+  await updateDoc(doc(db, 'patients', id), {
+    isDeleted: true,
+    updated: {
+      by: auth.currentUser.uid,
+      on: serverTimestamp(),
+    },
+  });
+};
+
+export const getPatient = async (id) => {
+  const docRef = doc(db, 'patients', id);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return { id: docSnap.id, ...docSnap.data() };
+  }
+  return null;
 };
 
 export const subscribeToUserPatients = (userId, callback) => {
-  const repo = getRepository('patients');
-  return repo.subscribeToUserDocuments(userId, callback);
+  const q = query(
+    collection(db, 'patients'),
+    where('userId', '==', userId),
+    where('isDeleted', '==', false),
+    orderBy('created.on', 'desc')
+  );
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      callback(data);
+    },
+    (error) => {
+      console.error('Error in subscribeToUserPatients:', error);
+      if (error.code === 'permission-denied') {
+        callback([]);
+      }
+    }
+  );
 };
 
-// ========================================
-// Doctors - Using Repository Pattern
-// ========================================
-
+// Doctors
 export const createDoctor = async (data) => {
-  const repo = getRepository('doctors');
-  return await repo.create(data);
-};
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not authenticated');
 
-export const getDoctor = async (id) => {
-  const repo = getRepository('doctors');
-  return await repo.get(id);
+  const docRef = await addDoc(collection(db, 'doctors'), {
+    ...data,
+    userId: user.uid,
+    created: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+    updated: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+    isDeleted: false,
+  });
+
+  return docRef.id;
 };
 
 export const updateDoctor = async (id, data) => {
-  const repo = getRepository('doctors');
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not authenticated');
+
   // Get existing document to preserve userId and created fields
-  const existing = await repo.get(id);
-  if (!existing) {
+  const docRef = doc(db, 'doctors', id);
+  const docSnap = await getDoc(docRef);
+  
+  if (!docSnap.exists()) {
     throw new Error('Doctor not found');
   }
+
+  const existingData = docSnap.data();
   
-  // Preserve userId and created fields
-  const updateData = {
-    ...data,
-    userId: existing.userId,
-    created: existing.created,
-  };
-  
-  return await repo.update(id, updateData);
+  // Remove fields that shouldn't be updated, but preserve userId and created
+  const { userId, created, isDeleted, ...updateData } = data;
+
+  await updateDoc(docRef, {
+    ...updateData,
+    userId: existingData.userId, // Preserve userId
+    created: existingData.created, // Preserve created
+    updated: {
+      by: user.uid,
+      on: serverTimestamp(),
+    },
+  });
 };
 
 export const deleteDoctor = async (id) => {
-  const repo = getRepository('doctors');
-  return await repo.delete(id);
+  await updateDoc(doc(db, 'doctors', id), {
+    isDeleted: true,
+    updated: {
+      by: auth.currentUser.uid,
+      on: serverTimestamp(),
+    },
+  });
 };
 
 export const subscribeToUserDoctors = (userId, callback) => {
-  const repo = getRepository('doctors');
-  return repo.subscribeToUserDocuments(userId, callback);
+  const q = query(
+    collection(db, 'doctors'),
+    where('userId', '==', userId),
+    where('isDeleted', '==', false),
+    orderBy('created.on', 'desc')
+  );
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      callback(data);
+    },
+    (error) => {
+      console.error('Error in subscribeToUserDoctors:', error);
+      if (error.code === 'permission-denied') {
+        callback([]);
+      }
+    }
+  );
 };
 
 // ========================================
 // Frequency Options
 // ========================================
 
-import { collection, query, where, orderBy, getDocs, onSnapshot } from 'firebase/firestore';
-
+/**
+ * Get all frequency options
+ */
 export const getFrequencyOptions = async () => {
   const q = query(
     collection(db, 'frequencyOptions'),
@@ -236,6 +508,9 @@ export const getFrequencyOptions = async () => {
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
+/**
+ * Subscribe to frequency options
+ */
 export const subscribeToFrequencyOptions = (callback) => {
   const q = query(
     collection(db, 'frequencyOptions'),
@@ -259,6 +534,9 @@ export const subscribeToFrequencyOptions = (callback) => {
 // Prescription Medication Intake Tracking
 // ========================================
 
+/**
+ * Calculate next expected time based on frequency
+ */
 export const calculateNextExpectedTime = (frequency, lastTakenAt) => {
   if (!frequency || !lastTakenAt) {
     return null;
@@ -292,6 +570,9 @@ export const calculateNextExpectedTime = (frequency, lastTakenAt) => {
   return nextTime.toISOString();
 };
 
+/**
+ * Get medication status for today
+ */
 export const getMedicationStatus = (prescription) => {
   if (!prescription || prescription.trackingEnabled === false) {
     return {
@@ -385,6 +666,9 @@ export const getMedicationStatus = (prescription) => {
   };
 };
 
+/**
+ * Mark medication as taken
+ */
 export const markMedicationTaken = async (prescriptionId, notes = '') => {
   const user = auth.currentUser;
   if (!user) throw new Error('Not authenticated');
@@ -423,6 +707,9 @@ export const markMedicationTaken = async (prescriptionId, notes = '') => {
   return { success: true, record: newRecord };
 };
 
+/**
+ * Unmark medication (remove last record)
+ */
 export const unmarkMedicationTaken = async (prescriptionId, recordIndex = null) => {
   const user = auth.currentUser;
   if (!user) throw new Error('Not authenticated');
@@ -462,6 +749,9 @@ export const unmarkMedicationTaken = async (prescriptionId, recordIndex = null) 
 // Patient Vital Signs
 // ========================================
 
+/**
+ * Add vital signs record to patient
+ */
 export const addPatientVitalSigns = async (patientId, vitalSignsData) => {
   const user = auth.currentUser;
   if (!user) throw new Error('Not authenticated');
@@ -514,6 +804,9 @@ export const addPatientVitalSigns = async (patientId, vitalSignsData) => {
   return { success: true, record: newRecord };
 };
 
+/**
+ * Update vital signs record
+ */
 export const updatePatientVitalSigns = async (patientId, recordIndex, vitalSignsData) => {
   const user = auth.currentUser;
   if (!user) throw new Error('Not authenticated');
@@ -562,6 +855,9 @@ export const updatePatientVitalSigns = async (patientId, recordIndex, vitalSigns
   return { success: true, record: updatedRecord };
 };
 
+/**
+ * Delete vital signs record
+ */
 export const deletePatientVitalSigns = async (patientId, recordIndex) => {
   const user = auth.currentUser;
   if (!user) throw new Error('Not authenticated');
@@ -593,6 +889,9 @@ export const deletePatientVitalSigns = async (patientId, recordIndex) => {
   return { success: true };
 };
 
+/**
+ * Get latest vital signs for a patient
+ */
 export const getLatestVitalSigns = (patient) => {
   if (!patient || !patient.vitalSigns || patient.vitalSigns.length === 0) {
     return null;
@@ -602,6 +901,10 @@ export const getLatestVitalSigns = (patient) => {
   return patient.vitalSigns[0];
 };
 
+/**
+ * Manually clean up old vital signs records (called by maintainer)
+ * Keep only the most recent N records
+ */
 export const cleanupPatientVitalSigns = async (patientId, keepRecords = 1000) => {
   const user = auth.currentUser;
   if (!user) throw new Error('Not authenticated');

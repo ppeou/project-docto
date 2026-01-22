@@ -34,6 +34,17 @@
       "$ref": "common/patient.schema.json",
       "description": "Patient information"
     },
+    "ownerId": {
+      "type": "string",
+      "description": "User ID of the itinerary owner (same as created.by for now)"
+    },
+    "memberIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of user IDs who have access to this itinerary (owner + collaborators)"
+    },
     "created": {
       "type": "object",
       "required": ["by", "on"],

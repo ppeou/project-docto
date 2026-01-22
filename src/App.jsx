@@ -16,11 +16,13 @@ import DoctorNoteDetailPage from './pages/DoctorNoteDetailPage';
 import CalendarPage from './pages/CalendarPage';
 import SettingsPage from './pages/SettingsPage';
 import PatientsPage from './pages/PatientsPage';
+import PatientDetailPage from './pages/PatientDetailPage';
 import DoctorsPage from './pages/DoctorsPage';
 import SpecialtiesPage from './pages/SpecialtiesPage';
 import InitializeFrequencyOptionsPage from './pages/InitializeFrequencyOptionsPage';
 import AdminCollectionDeletionPage from './pages/AdminCollectionDeletionPage';
 import AdminSeedDataPage from './pages/AdminSeedDataPage';
+import AdminNotificationSettingsPage from './pages/AdminNotificationSettingsPage';
 import { LoadingSpinner } from './components/shared/LoadingSpinner';
 
 function ProtectedRoute({ children }) {
@@ -157,6 +159,14 @@ function App() {
           }
         />
         <Route
+          path="/patients/:id"
+          element={
+            <ProtectedRoute>
+              <PatientDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/doctors"
           element={
             <ProtectedRoute>
@@ -193,6 +203,14 @@ function App() {
           element={
             <ProtectedRoute>
               <AdminSeedDataPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/notifications"
+          element={
+            <ProtectedRoute>
+              <AdminNotificationSettingsPage />
             </ProtectedRoute>
           }
         />

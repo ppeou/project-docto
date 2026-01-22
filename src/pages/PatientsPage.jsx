@@ -238,33 +238,42 @@ export default function PatientsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredPatients.map((patient) => (
-              <Card key={patient.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg">{patient.name}</CardTitle>
-                      <CardDescription>{patient.relation}</CardDescription>
+              <Link key={patient.id} to={`/patients/${patient.id}`} className="block">
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">{patient.name}</CardTitle>
+                        <CardDescription>{patient.relation}</CardDescription>
+                      </div>
+                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleEdit(patient);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDelete(patient.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(patient)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(patient.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="mb-4 space-y-2">
+                  </CardHeader>
+                  <CardContent>
+                    <div className="mb-4 space-y-2" onClick={(e) => e.stopPropagation()}>
                     <Link to={`/prescriptions/create?patientId=${patient.id}`}>
                       <Button variant="outline" size="sm" className="w-full">
                         <Pill className="mr-2 h-4 w-4" />
@@ -275,7 +284,10 @@ export default function PatientsPage() {
                       variant="outline" 
                       size="sm" 
                       className="w-full"
-                      onClick={() => handleOpenVitalSigns(patient.id)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleOpenVitalSigns(patient.id);
+                      }}
                     >
                       <Activity className="mr-2 h-4 w-4" />
                       Record Vital Signs
@@ -368,7 +380,8 @@ export default function PatientsPage() {
                     </div>
                   )}
                 </CardContent>
-              </Card>
+                </Card>
+              </Link>
             ))}
           </div>
         )}

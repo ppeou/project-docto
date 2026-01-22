@@ -5,9 +5,35 @@ admin.initializeApp();
 const { sendEmail } = require('./email');
 const { sendSMS } = require('./notifications');
 
+// Helper function to check notification settings
+async function getNotificationSettings() {
+  const settingsRef = admin.firestore().doc('notificationSettings/global');
+  const settingsSnap = await settingsRef.get();
+  
+  if (settingsSnap.exists) {
+    const data = settingsSnap.data();
+    return {
+      emailEnabled: data.emailEnabled !== false, // Default to true if not set
+      smsEnabled: data.smsEnabled !== false, // Default to true if not set
+    };
+  }
+  
+  // Default settings if document doesn't exist
+  return {
+    emailEnabled: true,
+    smsEnabled: true,
+  };
+}
+
 // Auth trigger - send welcome email when user signs up
 exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
   try {
+    const settings = await getNotificationSettings();
+    if (!settings.emailEnabled) {
+      console.log('Email notifications are disabled, skipping welcome email');
+      return null;
+    }
+
     if (user.email) {
       await sendEmail({
         to: user.email,
@@ -31,6 +57,12 @@ exports.onAppointmentCreated = functions.firestore
   .document('appointments/{appointmentId}')
   .onCreate(async (snap, context) => {
     try {
+      const settings = await getNotificationSettings();
+      if (!settings.emailEnabled) {
+        console.log('Email notifications are disabled, skipping appointment notification');
+        return null;
+      }
+
       const appointment = snap.data();
       const itineraryRef = admin.firestore().doc(`itineraries/${appointment.itineraryId}`);
       const itinerary = await itineraryRef.get();
@@ -124,6 +156,11 @@ exports.sendCustomEmail = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
   }
 
+  const settings = await getNotificationSettings();
+  if (!settings.emailEnabled) {
+    throw new functions.https.HttpsError('failed-precondition', 'Email notifications are currently disabled');
+  }
+
   const { to, subject, message } = data;
 
   if (!to || !subject || !message) {
@@ -144,6 +181,11 @@ exports.sendSMSNotification = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
   }
 
+  const settings = await getNotificationSettings();
+  if (!settings.smsEnabled) {
+    throw new functions.https.HttpsError('failed-precondition', 'SMS notifications are currently disabled');
+  }
+
   const { phoneNumber, message } = data;
 
   if (!phoneNumber || !message) {
@@ -152,7 +194,7 @@ exports.sendSMSNotification = functions.https.onCall(async (data, context) => {
 
   try {
     const result = await sendSMS(phoneNumber, message);
-    return { success: true, messageId: result.sid };
+    return { success: true, messageId: result.sid || result.textId };
   } catch (error) {
     throw new functions.https.HttpsError('internal', error.message);
   }

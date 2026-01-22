@@ -1,43 +1,16 @@
-import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useEntitySubscription } from './useEntitySubscription';
 
+/**
+ * Hook for fetching doctor notes for an itinerary
+ * Uses generic entity subscription hook with filtering (DRY)
+ */
 export function useItineraryNotes(itineraryId) {
-  const [notes, setNotes] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!itineraryId) {
-      setNotes([]);
-      setLoading(false);
-      return;
-    }
-
-    const q = query(
-      collection(db, 'doctorNotes'),
-      where('itineraryId', '==', itineraryId),
-      where('isDeleted', '==', false),
-      orderBy('created.on', 'desc')
-    );
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        setNotes(data);
-        setLoading(false);
-      },
-      (error) => {
-        console.error('Error in useItineraryNotes:', error);
-        if (error.code === 'permission-denied') {
-          setNotes([]);
-        }
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [itineraryId]);
+  const { data: notes, loading } = useEntitySubscription('doctorNotes', null, {
+    filterField: 'itineraryId',
+    filterValue: itineraryId,
+    orderByField: 'created.on',
+    orderDirection: 'desc',
+  });
 
   return { notes, loading };
 }

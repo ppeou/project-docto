@@ -1,24 +1,16 @@
-import { useState, useEffect } from 'react';
-import { subscribeToItineraryAppointments } from '@/services/firestore';
+import { useEntitySubscription } from './useEntitySubscription';
 
+/**
+ * Hook for fetching appointments for an itinerary
+ * Uses generic entity subscription hook with filtering (DRY)
+ */
 export function useItineraryAppointments(itineraryId) {
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!itineraryId) {
-      setAppointments([]);
-      setLoading(false);
-      return;
-    }
-
-    const unsubscribe = subscribeToItineraryAppointments(itineraryId, (data) => {
-      setAppointments(data);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [itineraryId]);
+  const { data: appointments, loading } = useEntitySubscription('appointments', null, {
+    filterField: 'itineraryId',
+    filterValue: itineraryId,
+    orderByField: 'appointmentDate',
+    orderDirection: 'asc',
+  });
 
   return { appointments, loading };
 }

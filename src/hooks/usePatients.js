@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
+import { useEntitySubscription } from './useEntitySubscription';
 import { 
-  subscribeToUserPatients, 
   addPatientVitalSigns,
   updatePatientVitalSigns,
   deletePatientVitalSigns,
@@ -9,32 +8,21 @@ import {
   getPatient
 } from '@/services/firestore';
 
+/**
+ * Hook for fetching user patients
+ * Uses generic entity subscription hook (DRY)
+ * Extends with patient-specific operations (vital signs)
+ */
 export function usePatients() {
   const { user } = useAuth();
-  const [patients, setPatients] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!user) {
-      setPatients([]);
-      setLoading(false);
-      return;
-    }
-
-    const unsubscribe = subscribeToUserPatients(user.uid, (data) => {
-      setPatients(data);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
+  const { data: patients, loading } = useEntitySubscription('patients', user?.uid);
 
   const addVitalSigns = async (patientId, vitalSignsData) => {
     try {
       await addPatientVitalSigns(patientId, vitalSignsData);
       // Refetch patient to update UI
       const updated = await getPatient(patientId);
-      setPatients(prev => prev.map(p => p.id === patientId ? updated : p));
+      // Note: The subscription will automatically update, but we can manually update for immediate feedback
     } catch (err) {
       throw err;
     }
@@ -43,8 +31,6 @@ export function usePatients() {
   const updateVitalSigns = async (patientId, recordIndex, vitalSignsData) => {
     try {
       await updatePatientVitalSigns(patientId, recordIndex, vitalSignsData);
-      const updated = await getPatient(patientId);
-      setPatients(prev => prev.map(p => p.id === patientId ? updated : p));
     } catch (err) {
       throw err;
     }
@@ -53,8 +39,6 @@ export function usePatients() {
   const removeVitalSigns = async (patientId, recordIndex) => {
     try {
       await deletePatientVitalSigns(patientId, recordIndex);
-      const updated = await getPatient(patientId);
-      setPatients(prev => prev.map(p => p.id === patientId ? updated : p));
     } catch (err) {
       throw err;
     }
@@ -63,8 +47,6 @@ export function usePatients() {
   const cleanupVitalSigns = async (patientId, keepRecords = 1000) => {
     try {
       await cleanupPatientVitalSigns(patientId, keepRecords);
-      const updated = await getPatient(patientId);
-      setPatients(prev => prev.map(p => p.id === patientId ? updated : p));
       return { success: true };
     } catch (err) {
       throw err;

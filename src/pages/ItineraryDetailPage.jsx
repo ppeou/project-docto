@@ -6,6 +6,7 @@ import { useItineraryPrescriptions } from '@/hooks/useItineraryPrescriptions';
 import { useItineraryNotes } from '@/hooks/useItineraryNotes';
 import { usePatients } from '@/hooks/usePatients';
 import { updateItinerary } from '@/services/firestore';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -36,6 +37,7 @@ export default function ItineraryDetailPage() {
   const { notes, loading: notesLoading } = useItineraryNotes(id);
   const { patients, loading: patientsLoading } = usePatients();
   const { toast } = useToast();
+  const { user } = useAuth();
   
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -46,6 +48,9 @@ export default function ItineraryDetailPage() {
     endDate: '',
   });
   const [saving, setSaving] = useState(false);
+  const isOwner = itinerary && user && itinerary.ownerId === user.uid;
+  const isMember = itinerary && user && Array.isArray(itinerary.memberIds) && itinerary.memberIds.includes(user.uid);
+  const canEdit = !!user && (isOwner || isMember);
 
   // Helper function to convert date to YYYY-MM-DD format
   const dateToInputFormat = (date) => {
@@ -163,12 +168,17 @@ export default function ItineraryDetailPage() {
               <p className="text-muted-foreground mt-1">
                 {itinerary.patient?.name} ({itinerary.patient?.relation})
               </p>
+              {user && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {isOwner ? 'You are the owner of this itinerary.' : 'You are collaborating on this itinerary.'}
+                </p>
+              )}
             </div>
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" onClick={handleEdit}>
+                <Button variant="outline" onClick={handleEdit} disabled={!canEdit}>
                   <Edit className="mr-2 h-4 w-4" />
-                  Edit
+                  {canEdit ? 'Edit' : 'View only'}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -410,7 +420,7 @@ export default function ItineraryDetailPage() {
                       </CardHeader>
                       <CardContent>
                         <p className="text-sm text-muted-foreground">
-                          Dosage: {prescription.dosage} | Frequency: {prescription.frequency}
+                          Dosage: {prescription.dosage} | Frequency: {prescription.frequency?.label || prescription.frequencyText || 'Not specified'}
                         </p>
                         {prescription.refills && (
                           <p className="text-sm text-muted-foreground mt-1">

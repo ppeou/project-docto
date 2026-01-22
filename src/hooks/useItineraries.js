@@ -1,26 +1,13 @@
-import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
-import { subscribeToUserItineraries } from '@/services/firestore';
+import { useEntitySubscription } from './useEntitySubscription';
 
+/**
+ * Hook for fetching user itineraries
+ * Uses generic entity subscription hook (DRY)
+ */
 export function useItineraries() {
   const { user } = useAuth();
-  const [itineraries, setItineraries] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!user) {
-      setItineraries([]);
-      setLoading(false);
-      return;
-    }
-
-    const unsubscribe = subscribeToUserItineraries(user.uid, (data) => {
-      setItineraries(data);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
+  const { data: itineraries, loading } = useEntitySubscription('itineraries', user?.uid);
 
   return { itineraries, loading };
 }

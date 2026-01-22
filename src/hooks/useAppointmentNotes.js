@@ -1,24 +1,16 @@
-import { useState, useEffect } from 'react';
-import { subscribeToAppointmentNotes } from '@/services/firestore';
+import { useEntitySubscription } from './useEntitySubscription';
 
+/**
+ * Hook for fetching doctor notes for an appointment
+ * Uses generic entity subscription hook with filtering (DRY)
+ */
 export function useAppointmentNotes(appointmentId) {
-  const [notes, setNotes] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!appointmentId) {
-      setNotes([]);
-      setLoading(false);
-      return;
-    }
-
-    const unsubscribe = subscribeToAppointmentNotes(appointmentId, (data) => {
-      setNotes(data);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [appointmentId]);
+  const { data: notes, loading } = useEntitySubscription('doctorNotes', null, {
+    filterField: 'appointmentId',
+    filterValue: appointmentId,
+    orderByField: 'created.on',
+    orderDirection: 'desc',
+  });
 
   return { notes, loading };
 }

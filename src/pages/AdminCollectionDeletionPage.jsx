@@ -9,7 +9,12 @@ import { deleteCollection, getCollectionCount, COLLECTIONS } from '@/services/ad
 import { Trash2, RefreshCw, AlertTriangle } from 'lucide-react';
 
 export default function AdminCollectionDeletionPage() {
-  const [selectedCollections, setSelectedCollections] = useState(new Set());
+  // Pre-select all collections except users, specialties, and frequencyOptions
+  const excludedCollections = ['users', 'specialties', 'frequencyOptions'];
+  const initialSelected = new Set(
+    COLLECTIONS.filter(col => !excludedCollections.includes(col))
+  );
+  const [selectedCollections, setSelectedCollections] = useState(initialSelected);
   const [collectionCounts, setCollectionCounts] = useState({});
   const [loading, setLoading] = useState(false);
   const [loadingCounts, setLoadingCounts] = useState(false);
