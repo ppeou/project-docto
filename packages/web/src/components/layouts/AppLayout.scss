@@ -1,0 +1,160 @@
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding-bottom: 64px; // Space for fixed bottom nav
+
+  &__main {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  &__nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: hsl(var(--card));
+    border-top: 1px solid hsl(var(--border));
+    z-index: 50;
+  }
+
+  &__nav-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    padding: 0 1rem;
+    max-width: 100%;
+  }
+
+  &__logo {
+    display: flex;
+    align-items: center;
+  }
+
+  &__tabs {
+    display: flex;
+    gap: 0.5rem;
+    flex: 1;
+    justify-content: center;
+  }
+
+  &__tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: calc(var(--radius) - 2px);
+    transition: background-color 0.2s;
+    min-width: 60px;
+    min-height: 44px;
+    color: hsl(var(--muted-foreground));
+    text-decoration: none;
+
+    &:hover {
+      background: hsl(var(--accent));
+      color: hsl(var(--accent-foreground));
+    }
+
+    &:focus-visible {
+      outline: 2px solid hsl(var(--ring));
+      outline-offset: 2px;
+    }
+
+    &--active {
+      color: hsl(var(--primary));
+      background: hsl(var(--accent));
+    }
+  }
+
+  &__tab-label {
+    font-size: 0.625rem;
+    font-weight: 500;
+  }
+
+  &__user-menu {
+    display: flex;
+    align-items: center;
+    position: relative;
+  }
+
+  &__user-menu-container {
+    position: relative;
+  }
+
+  &__user-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+    min-width: 44px;
+    min-height: 44px;
+
+    &:hover {
+      background: hsl(var(--accent));
+    }
+
+    &:focus-visible {
+      outline: 2px solid hsl(var(--ring));
+      outline-offset: 2px;
+    }
+  }
+
+  &__user-dropdown {
+    position: absolute;
+    bottom: calc(100% + 0.5rem);
+    right: 0;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) - 2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    min-width: 150px;
+    padding: 0.25rem;
+    display: none;
+
+    .app-layout__user-menu-container:hover &,
+    .app-layout__user-menu-container:focus-within & {
+      display: block;
+    }
+  }
+
+  &__user-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: none;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    border-radius: calc(var(--radius) - 4px);
+    transition: background-color 0.2s;
+    font-size: 0.875rem;
+    min-height: 44px;
+    color: hsl(var(--foreground));
+
+    &:hover,
+    &:focus {
+      background: hsl(var(--accent));
+      outline: none;
+    }
+
+    &:focus-visible {
+      outline: 2px solid hsl(var(--ring));
+      outline-offset: -2px;
+    }
+  }
+}
