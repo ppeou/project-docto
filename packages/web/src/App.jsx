@@ -24,7 +24,9 @@ import CalendarPage from './pages/CalendarPage';
 import SettingsPage from './pages/SettingsPage';
 import PatientsPage from './pages/PatientsPage';
 import PatientDetailPage from './pages/PatientDetailPage';
+import CreatePatientPage from './pages/CreatePatientPage';
 import DoctorsPage from './pages/DoctorsPage';
+import CreateDoctorPage from './pages/CreateDoctorPage';
 import SpecialtiesPage from './pages/SpecialtiesPage';
 import InitializeFrequencyOptionsPage from './pages/InitializeFrequencyOptionsPage';
 import AdminCollectionDeletionPage from './pages/AdminCollectionDeletionPage';
@@ -90,8 +92,10 @@ function App() {
           <Route path="notes/:id" element={<DoctorNoteDetailPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="patients" element={<PatientsPage />} />
+          <Route path="patients/create" element={<CreatePatientPage />} />
           <Route path="patients/:id" element={<PatientDetailPage />} />
           <Route path="doctors" element={<DoctorsPage />} />
+          <Route path="doctors/create" element={<CreateDoctorPage />} />
           <Route path="specialties" element={<SpecialtiesPage />} />
           <Route path="admin/init-frequency-options" element={<InitializeFrequencyOptionsPage />} />
           <Route path="admin/collections" element={<AdminCollectionDeletionPage />} />

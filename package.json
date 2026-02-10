@@ -21,7 +21,8 @@
     "deploy:storage": "firebase deploy --only storage",
     "deploy:all": "npm run clean:build && firebase deploy",
     "serve": "firebase emulators:start",
-    "generate-icons": "node generate-icons.js"
+    "generate-icons": "node generate-icons.js",
+    "init:specialties": "node scripts/init-specialties-firestore.js"
   },
   "devDependencies": {
     "eslint": "^8.57.0",

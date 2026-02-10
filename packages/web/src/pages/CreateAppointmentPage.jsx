@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { createAppointment } from '@/services/firestore';
+import { DatePicker } from '@core/components/DatePicker.jsx';
 import { useItinerary } from '@/hooks/useItinerary';
 import { useDoctors } from '@/hooks/useDoctors';
 import { Button } from '@/components/ui/button';
@@ -225,9 +226,9 @@ export default function CreateAppointmentPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="appointmentDate">Date *</Label>
-                    <Input
+                    <DatePicker
                       id="appointmentDate"
-                      type="date"
+                      name="appointmentDate"
                       value={formData.appointmentDate}
                       onChange={(e) => setFormData({ ...formData, appointmentDate: e.target.value })}
                       required

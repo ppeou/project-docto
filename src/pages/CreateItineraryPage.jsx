@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createItinerary } from '@/services/firestore';
+import { DatePicker } from '@core/components/DatePicker.jsx';
 import { usePatients } from '@/hooks/usePatients';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -150,25 +151,25 @@ export default function CreateItineraryPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="startDate">Start Date</Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={formData.startDate}
-                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="startDate">Start Date</Label>
+                <DatePicker
+                  id="startDate"
+                  name="startDate"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="endDate">End Date</Label>
-                  <Input
-                    id="endDate"
-                    type="date"
-                    value={formData.endDate}
-                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="endDate">End Date</Label>
+                <DatePicker
+                  id="endDate"
+                  name="endDate"
+                  value={formData.endDate}
+                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                />
+              </div>
               </div>
 
               <div className="flex gap-4">

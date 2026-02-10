@@ -189,18 +189,21 @@ export default function PatientsPage() {
             />
           </div>
 
-          <Dialog open={isOpen} onOpenChange={(open) => {
-            if (!open) close();
-          }}>
-            <Button onClick={open}>
+          <Link to="/patients/create">
+            <Button>
               <Plus className="mr-2 h-4 w-4" />
               Add Patient
             </Button>
+          </Link>
+
+          <Dialog open={isOpen} onOpenChange={(open) => {
+            if (!open) close();
+          }}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{editingEntity ? 'Edit Patient' : 'Add Patient'}</DialogTitle>
+                <DialogTitle>Edit Patient</DialogTitle>
                 <DialogDescription>
-                  {editingEntity ? 'Update patient information' : 'Add a new patient to your list'}
+                  Update patient information
                 </DialogDescription>
               </DialogHeader>
               <div>

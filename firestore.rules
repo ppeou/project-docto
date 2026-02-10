@@ -44,15 +44,12 @@ service cloud.firestore {
     // Access level: 1=viewer (read-only), 2=collaborator (read-write). Owner always has write.
     function hasWriteAccessToItinerary(itineraryId) {
       let itinerary = get(/databases/$(database)/documents/itineraries/$(itineraryId));
-      if (itinerary.data.created.by == request.auth.uid) {
-        return true;
-      }
-      if (itinerary.data.memberAccess != null) {
-        return itinerary.data.memberAccess[request.auth.uid] == 2;
-      }
-      // Backward compatibility: no memberAccess => treat as collaborator
-      return itinerary.data.memberIds != null && 
-             request.auth.uid in itinerary.data.memberIds;
+      return itinerary.data.created.by == request.auth.uid ||
+             (itinerary.data.memberAccess != null &&
+              itinerary.data.memberAccess[request.auth.uid] == 2) ||
+             // Backward compatibility: no memberAccess => treat as collaborator
+             (itinerary.data.memberIds != null &&
+              request.auth.uid in itinerary.data.memberIds);
     }
 
     function hasItineraryAccess(itineraryId) {
@@ -327,15 +324,14 @@ service cloud.firestore {
     match /specialties/{specialtyId} {
       // Allow read for all authenticated users (including queries)
       allow read: if isAuthenticated();
-      // Allow create for authenticated users
-      allow create: if isAuthenticated() && 
-                       request.resource.data.name is string &&
-                       request.resource.data.name.size() > 0;
-      // Allow update for authenticated users
-      allow update: if isAuthenticated() && 
-                       request.resource.data.name is string &&
-                       request.resource.data.name.size() > 0;
-      // Allow delete for authenticated users (admins can delete any, others can delete their own)
+
+      // Allow create/update for authenticated users while still validating data shape.
+      // (You can tighten this further later if you want these to be admin-only.)
+      allow create, update: if isAuthenticated() &&
+                               request.resource.data.name is string &&
+                               request.resource.data.name.size() > 0;
+
+      // Keep deletes restricted to authenticated users for safety
       allow delete: if isAuthenticated();
     }
 
