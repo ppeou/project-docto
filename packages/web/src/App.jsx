@@ -27,6 +27,7 @@ import PatientDetailPage from './pages/PatientDetailPage';
 import CreatePatientPage from './pages/CreatePatientPage';
 import DoctorsPage from './pages/DoctorsPage';
 import CreateDoctorPage from './pages/CreateDoctorPage';
+import EditDoctorPage from './pages/EditDoctorPage';
 import SpecialtiesPage from './pages/SpecialtiesPage';
 import InitializeFrequencyOptionsPage from './pages/InitializeFrequencyOptionsPage';
 import AdminCollectionDeletionPage from './pages/AdminCollectionDeletionPage';
@@ -96,6 +97,7 @@ function App() {
           <Route path="patients/:id" element={<PatientDetailPage />} />
           <Route path="doctors" element={<DoctorsPage />} />
           <Route path="doctors/create" element={<CreateDoctorPage />} />
+          <Route path="doctors/:id/edit" element={<EditDoctorPage />} />
           <Route path="specialties" element={<SpecialtiesPage />} />
           <Route path="admin/init-frequency-options" element={<InitializeFrequencyOptionsPage />} />
           <Route path="admin/collections" element={<AdminCollectionDeletionPage />} />

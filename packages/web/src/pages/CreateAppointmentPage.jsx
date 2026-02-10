@@ -25,10 +25,6 @@ export default function CreateAppointmentPage() {
     itineraryId: itineraryId || '',
     title: '',
     doctorId: '',
-    doctorSpecialty: '',
-    doctorPhone: '',
-    doctorEmail: '',
-    clinicName: '',
     appointmentDate: '',
     appointmentTime: '',
     duration: '30',
@@ -49,14 +45,7 @@ export default function CreateAppointmentPage() {
   useEffect(() => {
     if (formData.doctorId && doctors.length > 0) {
       const selectedDoctor = doctors.find(d => d.id === formData.doctorId);
-      if (selectedDoctor) {
-        setFormData(prev => ({
-          ...prev,
-          doctorSpecialty: selectedDoctor.specialty || '',
-          doctorPhone: selectedDoctor.phones?.[0]?.phone || '',
-          doctorEmail: selectedDoctor.emails?.[0]?.email || '',
-        }));
-      }
+      // No longer mutating appointment data with doctor info; we only show it read-only in the UI.
     }
   }, [formData.doctorId, doctors]);
 
@@ -85,11 +74,6 @@ export default function CreateAppointmentPage() {
         itineraryId: formData.itineraryId,
         title: formData.title,
         doctorId: formData.doctorId,
-        doctorSnapshot: {
-          name: selectedDoctor.name,
-          specialty: formData.doctorSpecialty || selectedDoctor.specialty || undefined,
-        },
-        clinicName: formData.clinicName || undefined,
         appointmentDate: appointmentDateTime.toISOString(),
         duration: parseInt(formData.duration, 10),
         purpose: formData.purpose || undefined,
@@ -141,7 +125,7 @@ export default function CreateAppointmentPage() {
               </div>
 
               <div className="space-y-4 border-t pt-4">
-                <h3 className="font-semibold">Doctor Information</h3>
+                <h3 className="font-semibold">Doctor</h3>
                 <div className="space-y-2">
                   <Label htmlFor="doctorId">Doctor *</Label>
                   <Select
@@ -174,50 +158,11 @@ export default function CreateAppointmentPage() {
                       {' '}to create an appointment
                     </p>
                   )}
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="doctorSpecialty">Specialty</Label>
-                    <Input
-                      id="doctorSpecialty"
-                      value={formData.doctorSpecialty}
-                      onChange={(e) => setFormData({ ...formData, doctorSpecialty: e.target.value })}
-                      placeholder="Cardiology, General Practice"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="doctorPhone">Phone</Label>
-                    <Input
-                      id="doctorPhone"
-                      type="tel"
-                      value={formData.doctorPhone}
-                      onChange={(e) => setFormData({ ...formData, doctorPhone: e.target.value })}
-                      placeholder="+1234567890"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="doctorEmail">Email</Label>
-                  <Input
-                    id="doctorEmail"
-                    type="email"
-                    value={formData.doctorEmail}
-                    onChange={(e) => setFormData({ ...formData, doctorEmail: e.target.value })}
-                    placeholder="doctor@clinic.com"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-4 border-t pt-4">
-                <h3 className="font-semibold">Clinic Information</h3>
-                <div className="space-y-2">
-                  <Label htmlFor="clinicName">Clinic/Hospital Name</Label>
-                  <Input
-                    id="clinicName"
-                    value={formData.clinicName}
-                    onChange={(e) => setFormData({ ...formData, clinicName: e.target.value })}
-                    placeholder="City Medical Center"
-                  />
+                  {formData.doctorId && (
+                    <p className="text-xs text-muted-foreground">
+                      Doctor and clinic details are managed on the doctor profile.
+                    </p>
+                  )}
                 </div>
               </div>
 

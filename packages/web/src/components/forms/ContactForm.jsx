@@ -255,44 +255,34 @@ export function ContactForm({
       {type === 'doctor' && (
         <div className="space-y-2">
           <Label>Specialties</Label>
-          <div className="flex gap-2 items-center">
-            <Select
-              value={selectedSpecialty}
-              onValueChange={setSelectedSpecialty}
-              disabled={specialtiesLoading}
-            >
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder={specialtiesLoading ? "Loading..." : "Select a specialty"} />
-              </SelectTrigger>
-              <SelectContent>
-                {specialties
-                  .filter(s => !specialtyArray.includes(s.name))
-                  .map((specialty) => (
-                    <SelectItem key={specialty.id} value={specialty.name}>
-                      {specialty.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                if (selectedSpecialty && !specialtyArray.includes(selectedSpecialty)) {
-                  const newSpecialties = [...specialtyArray, selectedSpecialty];
-                  setFormData({ 
-                    ...formData, 
-                    specialties: newSpecialties,
-                    specialty: newSpecialties.join(', ') // Keep for backward compatibility
-                  });
-                  setSelectedSpecialty('');
-                }
-              }}
-              disabled={!selectedSpecialty}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
+          <Select
+            value={selectedSpecialty}
+            onValueChange={(value) => {
+              setSelectedSpecialty(value);
+              if (value && !specialtyArray.includes(value)) {
+                const newSpecialties = [...specialtyArray, value];
+                setFormData({
+                  ...formData,
+                  specialties: newSpecialties,
+                  specialty: newSpecialties.join(', '), // Keep for backward compatibility
+                });
+              }
+            }}
+            disabled={specialtiesLoading}
+          >
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder={specialtiesLoading ? "Loading..." : "Select a specialty"} />
+            </SelectTrigger>
+            <SelectContent>
+              {specialties
+                .filter((s) => !specialtyArray.includes(s.name))
+                .map((specialty) => (
+                  <SelectItem key={specialty.id} value={specialty.name}>
+                    {specialty.name}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
           {specialtyArray.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
               {specialtyArray.map((specialty, index) => (
@@ -302,10 +292,10 @@ export function ContactForm({
                     type="button"
                     onClick={() => {
                       const newSpecialties = specialtyArray.filter((_, i) => i !== index);
-                      setFormData({ 
-                        ...formData, 
+                      setFormData({
+                        ...formData,
                         specialties: newSpecialties,
-                        specialty: newSpecialties.join(', ') // Keep for backward compatibility
+                        specialty: newSpecialties.join(', '), // Keep for backward compatibility
                       });
                     }}
                     className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"

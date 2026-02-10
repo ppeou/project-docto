@@ -182,33 +182,6 @@ export default function AppointmentDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Clinic Information */}
-          {appointment.clinicName && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Clinic Information</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-start gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
-                  <div>
-                    <p className="font-medium">{appointment.clinicName}</p>
-                    {appointment.clinicAddress && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {[
-                          appointment.clinicAddress.street,
-                          appointment.clinicAddress.city,
-                          appointment.clinicAddress.state,
-                          appointment.clinicAddress.postalCode,
-                        ].filter(Boolean).join(', ')}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Pre-Appointment Notes */}
           {appointment.notes && (
             <Card>

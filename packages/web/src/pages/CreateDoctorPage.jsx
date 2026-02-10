@@ -22,9 +22,7 @@ export default function CreateDoctorPage() {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState(getInitialFormData);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
+  const handleSubmit = async () => {
     if (!formData.name?.trim()) {
       toast({
         variant: 'destructive',
@@ -59,15 +57,19 @@ export default function CreateDoctorPage() {
       title="Add Doctor"
       description="Add a new doctor to your list"
     >
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-6">
         <ContactForm
           formData={formData}
           setFormData={setFormData}
           type="doctor"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
         />
         
         <div className="flex gap-4">
-          <Button type="submit" disabled={loading} className="flex-1">
+          <Button type="button" onClick={handleSubmit} disabled={loading} className="flex-1">
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Create Doctor
           </Button>
@@ -77,7 +79,7 @@ export default function CreateDoctorPage() {
             </Button>
           </Link>
         </div>
-      </form>
+      </div>
     </FormPageLayout>
   );
 }
