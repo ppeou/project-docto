@@ -9,7 +9,8 @@
     "dosage",
     "frequency",
     "quantity",
-    "prescribedBy",
+    "doctorId",
+    "doctorSnapshot",
     "datePrescribed",
     "refills",
     "status",
@@ -71,16 +72,24 @@
     "frequencyText": {
       "type": "string",
       "maxLength": 100,
-      "description": "Legacy text frequency (for display/backward compatibility, optional)"
+      "description": "Optional plain-text frequency for display when frequency object is not used"
     },
     "quantity": {
       "type": "integer",
       "minimum": 1,
       "description": "Quantity prescribed (e.g., 30 tablets)"
     },
-    "prescribedBy": {
-      "$ref": "common/doctor.schema.json",
-      "description": "Prescribing doctor information"
+    "doctorId": {
+      "type": "string",
+      "description": "Reference to doctor document in doctors collection"
+    },
+    "doctorSnapshot": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "specialty": { "type": "string" }
+      },
+      "description": "Cached name/specialty for display without fetching doctor"
     },
     "pharmacyName": {
       "type": "string",
@@ -104,7 +113,7 @@
     },
     "patientId": {
       "type": "string",
-      "description": "Direct reference to patient (optional, can also be via itinerary)"
+      "description": "Reference to patient (optional; when set, use for queries; can also be via itinerary)"
     },
     "datePrescribed": {
       "type": "string",

@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ContactForm } from '@/components/forms/ContactForm';
 import { Edit, Trash2, Phone, Mail, Globe, MapPin, Pill, Search, Plus, Activity } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { formatDate, formatDateTime } from '@core/utils';
 
@@ -25,6 +25,7 @@ const getInitialFormData = (patient = null) => ({
 });
 
 export default function PatientsPage() {
+  const navigate = useNavigate();
   const { patients, loading, addVitalSigns } = usePatients();
   const { toast } = useToast();
   const [formData, setFormData] = useState(() => getInitialFormData());
@@ -236,8 +237,15 @@ export default function PatientsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredPatients.map((patient) => (
-              <Link key={patient.id} to={`/patients/${patient.id}`} className="block">
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+              <div
+                key={patient.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/patients/${patient.id}`)}
+                onKeyDown={(e) => e.key === 'Enter' && navigate(`/patients/${patient.id}`)}
+                className="block cursor-pointer"
+              >
+                <Card className="hover:shadow-lg transition-shadow h-full">
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
@@ -379,7 +387,7 @@ export default function PatientsPage() {
                   )}
                 </CardContent>
                 </Card>
-              </Link>
+              </div>
             ))}
           </div>
         )}

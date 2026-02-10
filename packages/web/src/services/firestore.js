@@ -1,7 +1,5 @@
 /**
- * Refactored Firestore service using Repository pattern
- * Maintains backward compatibility with existing code
- * Follows SOLID principles and DRY
+ * Firestore service – repository pattern, DRY CRUD.
  */
 
 import { getRepository } from './repositories/EntityRepositoryFactory';
@@ -10,215 +8,84 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '@core/services/firebase';
 import { serverTimestamp } from 'firebase/firestore';
 
-// ========================================
-// Itineraries - Using Repository Pattern
-// ========================================
+/** Build CRUD + subscribe for a repo key (DRY). */
+function crud(key) {
+  const repo = () => getRepository(key);
+  return {
+    create: (data) => repo().create(data),
+    get: (id) => repo().get(id),
+    update: (id, data) => repo().update(id, data),
+    delete: (id) => repo().delete(id),
+  };
+}
 
-export const createItinerary = async (data) => {
-  const repo = getRepository('itineraries');
-  return await repo.create(data);
-};
+const itineraries = crud('itineraries');
+const appointments = crud('appointments');
+const prescriptions = crud('prescriptions');
+const doctorNotes = crud('doctorNotes');
+const patients = crud('patients');
+const doctors = crud('doctors');
 
-export const getItinerary = async (id) => {
-  const repo = getRepository('itineraries');
-  return await repo.get(id);
-};
-
-export const updateItinerary = async (id, data) => {
-  const repo = getRepository('itineraries');
-  return await repo.update(id, data);
-};
-
-export const deleteItinerary = async (id) => {
-  const repo = getRepository('itineraries');
-  return await repo.delete(id);
-};
+export const createItinerary = itineraries.create;
+export const getItinerary = itineraries.get;
+export const updateItinerary = itineraries.update;
+export const deleteItinerary = itineraries.delete;
 
 export const getUserItineraries = async (userId) => {
-  const repo = getRepository('itineraries');
-  return new Promise((resolve, reject) => {
-    const unsubscribe = repo.subscribeToUserDocuments(userId, (data) => {
-      unsubscribe();
+  return new Promise((resolve) => {
+    const unsub = getRepository('itineraries').subscribeToUserDocuments(userId, (data) => {
+      unsub();
       resolve(data);
     });
   });
 };
+export const subscribeToUserItineraries = (userId, callback) =>
+  getRepository('itineraries').subscribeToUserDocuments(userId, callback);
 
-export const subscribeToUserItineraries = (userId, callback) => {
-  const repo = getRepository('itineraries');
-  return repo.subscribeToUserDocuments(userId, callback);
-};
+export const createAppointment = appointments.create;
+export const getAppointment = appointments.get;
+export const updateAppointment = appointments.update;
+export const deleteAppointment = appointments.delete;
+export const subscribeToItineraryAppointments = (itineraryId, callback) =>
+  getRepository('appointments').subscribeToFilteredDocuments('itineraryId', itineraryId, callback, 'appointmentDate', 'asc');
 
-// ========================================
-// Appointments - Using Repository Pattern
-// ========================================
+export const createPrescription = prescriptions.create;
+export const getPrescription = prescriptions.get;
+export const updatePrescription = prescriptions.update;
+export const deletePrescription = prescriptions.delete;
+export const subscribeToItineraryPrescriptions = (itineraryId, callback) =>
+  getRepository('prescriptions').subscribeToFilteredDocuments('itineraryId', itineraryId, callback, 'datePrescribed', 'desc');
 
-export const createAppointment = async (data) => {
-  const repo = getRepository('appointments');
-  return await repo.create(data);
-};
+export const createDoctorNote = doctorNotes.create;
+export const getDoctorNote = doctorNotes.get;
+export const updateDoctorNote = doctorNotes.update;
+export const deleteDoctorNote = doctorNotes.delete;
+export const subscribeToAppointmentNotes = (appointmentId, callback) =>
+  getRepository('doctorNotes').subscribeToFilteredDocuments('appointmentId', appointmentId, callback, 'created.on', 'desc');
 
-export const getAppointment = async (id) => {
-  const repo = getRepository('appointments');
-  return await repo.get(id);
-};
+export const createPatient = patients.create;
+export const getPatient = patients.get;
+export const deletePatient = patients.delete;
+export const subscribeToUserPatients = (userId, callback) =>
+  getRepository('patients').subscribeToUserDocuments(userId, callback);
 
-export const updateAppointment = async (id, data) => {
-  const repo = getRepository('appointments');
-  return await repo.update(id, data);
-};
+export async function updatePatient(id, data) {
+  const existing = await patients.get(id);
+  if (!existing) throw new Error('Patient not found');
+  return patients.update(id, { ...data, userId: existing.userId, created: existing.created });
+}
 
-export const deleteAppointment = async (id) => {
-  const repo = getRepository('appointments');
-  return await repo.delete(id);
-};
+export const createDoctor = doctors.create;
+export const getDoctor = doctors.get;
+export const deleteDoctor = doctors.delete;
+export const subscribeToUserDoctors = (userId, callback) =>
+  getRepository('doctors').subscribeToUserDocuments(userId, callback);
 
-export const subscribeToItineraryAppointments = (itineraryId, callback) => {
-  const repo = getRepository('appointments');
-  return repo.subscribeToFilteredDocuments('itineraryId', itineraryId, callback, 'appointmentDate', 'asc');
-};
-
-// ========================================
-// Prescriptions - Using Repository Pattern
-// ========================================
-
-export const createPrescription = async (data) => {
-  const repo = getRepository('prescriptions');
-  return await repo.create(data);
-};
-
-export const getPrescription = async (id) => {
-  const repo = getRepository('prescriptions');
-  return await repo.get(id);
-};
-
-export const updatePrescription = async (id, data) => {
-  const repo = getRepository('prescriptions');
-  return await repo.update(id, data);
-};
-
-export const deletePrescription = async (id) => {
-  const repo = getRepository('prescriptions');
-  return await repo.delete(id);
-};
-
-export const subscribeToItineraryPrescriptions = (itineraryId, callback) => {
-  const repo = getRepository('prescriptions');
-  return repo.subscribeToFilteredDocuments('itineraryId', itineraryId, callback, 'datePrescribed', 'desc');
-};
-
-// ========================================
-// Doctor Notes - Using Repository Pattern
-// ========================================
-
-export const createDoctorNote = async (data) => {
-  const repo = getRepository('doctorNotes');
-  return await repo.create(data);
-};
-
-export const getDoctorNote = async (id) => {
-  const repo = getRepository('doctorNotes');
-  return await repo.get(id);
-};
-
-export const updateDoctorNote = async (id, data) => {
-  const repo = getRepository('doctorNotes');
-  return await repo.update(id, data);
-};
-
-export const deleteDoctorNote = async (id) => {
-  const repo = getRepository('doctorNotes');
-  return await repo.delete(id);
-};
-
-export const subscribeToAppointmentNotes = (appointmentId, callback) => {
-  const repo = getRepository('doctorNotes');
-  return repo.subscribeToFilteredDocuments('appointmentId', appointmentId, callback, 'created.on', 'desc');
-};
-
-// ========================================
-// Patients - Using Repository Pattern
-// ========================================
-
-export const createPatient = async (data) => {
-  const repo = getRepository('patients');
-  return await repo.create(data);
-};
-
-export const getPatient = async (id) => {
-  const repo = getRepository('patients');
-  return await repo.get(id);
-};
-
-export const updatePatient = async (id, data) => {
-  const repo = getRepository('patients');
-  // Get existing document to preserve userId and created fields
-  const existing = await repo.get(id);
-  if (!existing) {
-    throw new Error('Patient not found');
-  }
-  
-  // Preserve userId and created fields
-  const updateData = {
-    ...data,
-    userId: existing.userId,
-    created: existing.created,
-  };
-  
-  return await repo.update(id, updateData);
-};
-
-export const deletePatient = async (id) => {
-  const repo = getRepository('patients');
-  return await repo.delete(id);
-};
-
-export const subscribeToUserPatients = (userId, callback) => {
-  const repo = getRepository('patients');
-  return repo.subscribeToUserDocuments(userId, callback);
-};
-
-// ========================================
-// Doctors - Using Repository Pattern
-// ========================================
-
-export const createDoctor = async (data) => {
-  const repo = getRepository('doctors');
-  return await repo.create(data);
-};
-
-export const getDoctor = async (id) => {
-  const repo = getRepository('doctors');
-  return await repo.get(id);
-};
-
-export const updateDoctor = async (id, data) => {
-  const repo = getRepository('doctors');
-  // Get existing document to preserve userId and created fields
-  const existing = await repo.get(id);
-  if (!existing) {
-    throw new Error('Doctor not found');
-  }
-  
-  // Preserve userId and created fields
-  const updateData = {
-    ...data,
-    userId: existing.userId,
-    created: existing.created,
-  };
-  
-  return await repo.update(id, updateData);
-};
-
-export const deleteDoctor = async (id) => {
-  const repo = getRepository('doctors');
-  return await repo.delete(id);
-};
-
-export const subscribeToUserDoctors = (userId, callback) => {
-  const repo = getRepository('doctors');
-  return repo.subscribeToUserDocuments(userId, callback);
-};
+export async function updateDoctor(id, data) {
+  const existing = await doctors.get(id);
+  if (!existing) throw new Error('Doctor not found');
+  return doctors.update(id, { ...data, userId: existing.userId, created: existing.created });
+}
 
 // ========================================
 // Frequency Options

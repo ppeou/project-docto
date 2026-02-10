@@ -45,6 +45,15 @@
       },
       "description": "Array of user IDs who have access to this itinerary (owner + collaborators)"
     },
+    "memberAccess": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "enum": [1, 2],
+        "description": "1=viewer (read-only), 2=collaborator (read-write)"
+      },
+      "description": "Map of user ID to access level. Owner (created.by) always has write."
+    },
     "created": {
       "type": "object",
       "required": ["by", "on"],

@@ -11,8 +11,13 @@ export function useItineraryCounts(itineraryIds) {
   const [prescriptions, setPrescriptions] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Stable key so effect only runs when the set of ids changes (avoids "Maximum update depth" from new array ref every render)
+  const idsKey =
+    !itineraryIds || itineraryIds.length === 0 ? '' : [...itineraryIds].sort().join(',');
+
   useEffect(() => {
-    if (!itineraryIds || itineraryIds.length === 0) {
+    const ids = idsKey ? idsKey.split(',') : [];
+    if (ids.length === 0) {
       setAppointments([]);
       setPrescriptions([]);
       setLoading(false);
@@ -23,7 +28,7 @@ export function useItineraryCounts(itineraryIds) {
 
     // Subscribe to appointments for all itineraries
     // Firestore rules will filter by membership, so we get all appointments user can access
-    itineraryIds.forEach((itineraryId) => {
+    ids.forEach((itineraryId) => {
       const appointmentsQuery = query(
         collection(db, 'appointments'),
         where('itineraryId', '==', itineraryId),
@@ -95,7 +100,7 @@ export function useItineraryCounts(itineraryIds) {
     return () => {
       unsubscribes.forEach((unsubscribe) => unsubscribe());
     };
-  }, [itineraryIds]);
+  }, [idsKey]);
 
   // Calculate counts per itinerary
   const counts = useMemo(() => {

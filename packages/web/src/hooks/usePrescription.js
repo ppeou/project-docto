@@ -1,71 +1,26 @@
-import { useState, useEffect } from 'react';
-import { 
-  getPrescription, 
-  markMedicationTaken, 
-  unmarkMedicationTaken,
-  getMedicationStatus 
-} from '@/services/firestore';
+import { useCallback } from 'react';
+import { useDocument } from './useDocument';
+import { getMedicationStatus, markMedicationTaken, unmarkMedicationTaken } from '@/services/firestore';
 
 export function usePrescription(id) {
-  const [prescription, setPrescription] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    if (!id) {
-      setLoading(false);
-      return;
-    }
-
-    const fetchPrescription = async () => {
-      try {
-        setLoading(true);
-        const data = await getPrescription(id);
-        setPrescription(data);
-        setError(null);
-      } catch (err) {
-        setError(err);
-        setPrescription(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPrescription();
-  }, [id]);
-
-  const markTaken = async (notes = '') => {
-    if (!prescription) return;
-    try {
-      await markMedicationTaken(id, notes);
-      // Refetch to update UI
-      const updated = await getPrescription(id);
-      setPrescription(updated);
-    } catch (err) {
-      throw err;
-    }
-  };
-
-  const unmarkTaken = async (recordIndex = null) => {
-    if (!prescription) return;
-    try {
-      await unmarkMedicationTaken(id, recordIndex);
-      const updated = await getPrescription(id);
-      setPrescription(updated);
-    } catch (err) {
-      throw err;
-    }
-  };
-
+  const { data: prescription, loading, error, refetch } = useDocument('prescriptions', id);
   const medicationStatus = prescription ? getMedicationStatus(prescription) : null;
 
-  return { 
-    prescription, 
-    loading, 
-    error, 
-    markTaken, 
-    unmarkTaken, 
-    medicationStatus 
-  };
-}
+  const markTaken = useCallback(
+    async (notes = '') => {
+      await markMedicationTaken(id, notes);
+      refetch();
+    },
+    [id, refetch]
+  );
 
+  const unmarkTaken = useCallback(
+    async (recordIndex = null) => {
+      await unmarkMedicationTaken(id, recordIndex);
+      refetch();
+    },
+    [id, refetch]
+  );
+
+  return { prescription, loading, error, markTaken, unmarkTaken, medicationStatus };
+}

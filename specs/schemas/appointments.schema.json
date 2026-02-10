@@ -7,7 +7,8 @@
     "id",
     "itineraryId",
     "title",
-    "doctor",
+    "doctorId",
+    "doctorSnapshot",
     "appointmentDate",
     "status",
     "created"
@@ -21,15 +22,27 @@
       "type": "string",
       "description": "Reference to parent itinerary"
     },
+    "patientId": {
+      "type": "string",
+      "description": "Reference to patient (derived from itinerary, for indexing)"
+    },
+    "doctorId": {
+      "type": "string",
+      "description": "Reference to doctor document in doctors collection"
+    },
+    "doctorSnapshot": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "specialty": { "type": "string" }
+      },
+      "description": "Cached name/specialty for display without fetching doctor"
+    },
     "title": {
       "type": "string",
       "minLength": 1,
       "maxLength": 200,
       "description": "Appointment title (e.g., 'Annual Checkup', 'Cardiologist Visit')"
-    },
-    "doctor": {
-      "$ref": "common/doctor.schema.json",
-      "description": "Doctor information"
     },
     "clinicName": {
       "type": "string",

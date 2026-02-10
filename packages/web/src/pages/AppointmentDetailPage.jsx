@@ -2,6 +2,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getAppointment, updateAppointment, deleteAppointment } from '@/services/firestore';
 import { useAppointment } from '@/hooks/useAppointment';
 import { useAppointmentNotes } from '@/hooks/useAppointmentNotes';
+import { useDoctor } from '@/hooks/useDoctor';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,14 +11,7 @@ import { ErrorMessage } from '@/components/shared/ErrorMessage';
 import { useToast } from '@/components/ui/use-toast';
 import { ArrowLeft, Edit, Trash2, Calendar, Phone, Mail, MapPin, FileText } from 'lucide-react';
 import { formatDateTime } from '@core/utils';
-
-const NOTE_TYPE_LABELS = {
-  1: 'General Notes',
-  2: 'Test Results',
-  3: 'Treatment Plan',
-  4: 'Diagnosis',
-  5: 'Other',
-};
+import { APPOINTMENT_STATUS, NOTE_TYPE_LABELS } from '@/lib/constants';
 
 export default function AppointmentDetailPage() {
   const { id } = useParams();
@@ -25,6 +19,10 @@ export default function AppointmentDetailPage() {
   const { toast } = useToast();
   const { appointment, loading, error } = useAppointment(id);
   const { notes, loading: notesLoading } = useAppointmentNotes(id);
+  const { doctor: doctorDoc } = useDoctor(appointment?.doctorId);
+  const doctorDisplay = doctorDoc || appointment?.doctorSnapshot;
+  const doctorPhone = doctorDoc?.phones?.[0]?.phone;
+  const doctorEmail = doctorDoc?.emails?.[0]?.email;
 
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this appointment?')) return;
@@ -77,13 +75,6 @@ export default function AppointmentDetailPage() {
     );
   }
 
-  const statusLabels = {
-    1: 'Scheduled',
-    2: 'Completed',
-    3: 'Cancelled',
-    4: 'Rescheduled',
-  };
-
   const statusColors = {
     1: 'default',
     2: 'success',
@@ -105,7 +96,7 @@ export default function AppointmentDetailPage() {
             <div>
               <h1 className="text-3xl font-bold">{appointment.title}</h1>
               <Badge variant={statusColors[appointment.status]} className="mt-2">
-                {statusLabels[appointment.status]}
+                {APPOINTMENT_STATUS[appointment.status]}
               </Badge>
             </div>
             <div className="flex gap-2">
@@ -134,27 +125,27 @@ export default function AppointmentDetailPage() {
             <CardContent className="space-y-3">
               <div>
                 <p className="text-sm text-muted-foreground">Name</p>
-                <p className="font-medium">{appointment.doctor?.name || 'Not specified'}</p>
+                <p className="font-medium">{doctorDisplay?.name || 'Not specified'}</p>
               </div>
-              {appointment.doctor?.specialty && (
+              {doctorDisplay?.specialty && (
                 <div>
                   <p className="text-sm text-muted-foreground">Specialty</p>
-                  <p className="font-medium">{appointment.doctor.specialty}</p>
+                  <p className="font-medium">{doctorDisplay.specialty}</p>
                 </div>
               )}
-              {appointment.doctor?.phone && (
+              {(doctorPhone != null && doctorPhone !== '') && (
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-muted-foreground" />
-                  <a href={`tel:${appointment.doctor.phone}`} className="text-primary hover:underline">
-                    {appointment.doctor.phone}
+                  <a href={`tel:${doctorPhone}`} className="text-primary hover:underline">
+                    {doctorPhone}
                   </a>
                 </div>
               )}
-              {appointment.doctor?.email && (
+              {(doctorEmail != null && doctorEmail !== '') && (
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
-                  <a href={`mailto:${appointment.doctor.email}`} className="text-primary hover:underline">
-                    {appointment.doctor.email}
+                  <a href={`mailto:${doctorEmail}`} className="text-primary hover:underline">
+                    {doctorEmail}
                   </a>
                 </div>
               )}

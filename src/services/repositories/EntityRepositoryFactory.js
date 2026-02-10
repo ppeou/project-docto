@@ -38,11 +38,16 @@ export const repositoryFactory = {
       const memberIds = ownerId
         ? Array.from(new Set([...existingMemberIds, ownerId]))
         : existingMemberIds;
+      const memberAccess = data.memberAccess && typeof data.memberAccess === 'object' ? { ...data.memberAccess } : {};
+      if (ownerId) {
+        memberAccess[ownerId] = 2; // owner is always collaborator
+      }
 
       return {
         ...data,
         ownerId: data.ownerId || ownerId,
         memberIds,
+        memberAccess,
       };
     },
   }),

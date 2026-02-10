@@ -11,6 +11,7 @@ import {
   setDoc,
   query,
   where,
+  arrayUnion,
 } from 'firebase/firestore';
 import { db, auth } from '@core/services/firebase';
 
@@ -463,6 +464,7 @@ export const generateSeedItineraries = async (count = 10, patientIds = [], docto
       },
       ownerId: userIdForData,
       memberIds: [userIdForData], // Creator is automatically a member
+      memberAccess: { [userIdForData]: 2 }, // owner is collaborator
       created: {
         by: userIdForData,
         on: serverTimestamp(),
@@ -539,11 +541,10 @@ export const generateSeedAppointments = async (count = 20, itineraryIds = [], do
       const appointmentData = {
         itineraryId,
         title: `${doctorData.specialty || 'General'} Visit`,
-        doctor: {
+        doctorId,
+        doctorSnapshot: {
           name: doctorData.name,
           specialty: doctorData.specialty,
-          phones: doctorData.phones || [],
-          emails: doctorData.emails || [],
         },
         clinicName: getRandomItem(CLINIC_NAMES),
         clinicAddress: generateAddress(),
@@ -640,11 +641,10 @@ export const generateSeedPrescriptions = async (count = 15, itineraryIds = [], d
         dosage: medication.dosage,
         frequency,
         quantity: getRandomItem([30, 60, 90, 120, 180]),
-        prescribedBy: {
+        doctorId,
+        doctorSnapshot: {
           name: doctorData.name,
           specialty: doctorData.specialty,
-          phones: doctorData.phones || [],
-          emails: doctorData.emails || [],
         },
         pharmacyName: getRandomItem(['CVS Pharmacy', 'Walgreens', 'Rite Aid', 'Walmart Pharmacy', 'Target Pharmacy', 'Kroger Pharmacy', 'Safeway Pharmacy']),
         pharmacyPhone: generatePhone().phone,
@@ -835,32 +835,57 @@ export const generateSeedItineraryShares = async (count = 10, itineraryIds = [],
 
   const shares = [];
   const BATCH_SIZE = 500;
-  
+  /** @type {Record<string, Record<string, number>>} itineraryId -> { [userId]: accessLevel } */
+  const itineraryUpdates = {};
+
   for (let i = 0; i < count; i += BATCH_SIZE) {
     const batch = writeBatch(db);
     const batchCount = Math.min(BATCH_SIZE, count - i);
-    
+    const batchItineraryUpdates = /** @type {Record<string, Record<string, number>>} */ ({});
+
     for (let j = 0; j < batchCount; j++) {
-      // Use provided userId or currently authenticated user for all seed data to comply with Firestore rules
       const userIdForData = targetUserId;
       const itineraryId = getRandomItem(itineraryIds);
       const sharedWith = getRandomItem(availableUserIds);
+      const accessLevel = getRandomItem([1, 2]); // 1=viewer, 2=collaborator
+      const isDeleted = Math.random() > 0.9;
 
       const shareData = {
         itineraryId,
         sharedBy: userIdForData,
         sharedWith,
-        accessLevel: getRandomItem([1, 2]), // 1=viewer, 2=collaborator
+        accessLevel,
         created: {
           by: userIdForData,
           on: serverTimestamp(),
         },
-        isDeleted: Math.random() > 0.9, // 10% deleted
+        isDeleted,
       };
 
       const docRef = doc(collection(db, 'itineraryShares'));
       batch.set(docRef, shareData);
       shares.push({ id: docRef.id, ...shareData });
+
+      if (!isDeleted) {
+        if (!batchItineraryUpdates[itineraryId]) {
+          batchItineraryUpdates[itineraryId] = {};
+        }
+        batchItineraryUpdates[itineraryId][sharedWith] = accessLevel;
+      }
+    }
+
+    // One update per itinerary (one write per doc per batch)
+    for (const [itineraryId, userAccess] of Object.entries(batchItineraryUpdates)) {
+      const itineraryRef = doc(db, 'itineraries', itineraryId);
+      const userIds = Object.keys(userAccess);
+      const memberAccessUpdate = userIds.reduce((acc, uid) => {
+        acc[`memberAccess.${uid}`] = userAccess[uid];
+        return acc;
+      }, /** @type {Record<string, number>} */ ({}));
+      batch.update(itineraryRef, {
+        memberIds: arrayUnion(...userIds),
+        ...memberAccessUpdate,
+      });
     }
 
     await batch.commit();
@@ -902,6 +927,7 @@ const generateCompleteItinerary = async (patientId, patientData, doctorIds, doct
     },
     ownerId: userId,
     memberIds: [userId], // Creator is automatically a member
+    memberAccess: { [userId]: 2 }, // owner is collaborator
     created: {
       by: userId,
       on: serverTimestamp(),
@@ -942,11 +968,10 @@ const generateCompleteItinerary = async (patientId, patientData, doctorIds, doct
     const appointmentData = {
       itineraryId,
       title: `${doctorData.specialty || 'General'} Visit`,
-      doctor: {
+      doctorId,
+      doctorSnapshot: {
         name: doctorData.name,
         specialty: doctorData.specialty,
-        phones: doctorData.phones || [],
-        emails: doctorData.emails || [],
       },
       clinicName: getRandomItem(CLINIC_NAMES),
       clinicAddress: generateAddress(),
@@ -1011,11 +1036,10 @@ const generateCompleteItinerary = async (patientId, patientData, doctorIds, doct
       dosage: medication.dosage,
       frequency,
       quantity: getRandomItem([30, 60, 90, 120, 180]),
-      prescribedBy: {
+      doctorId,
+      doctorSnapshot: {
         name: doctorData.name,
         specialty: doctorData.specialty,
-        phones: doctorData.phones || [],
-        emails: doctorData.emails || [],
       },
       pharmacyName: getRandomItem(['CVS Pharmacy', 'Walgreens', 'Rite Aid', 'Walmart Pharmacy', 'Target Pharmacy', 'Kroger Pharmacy', 'Safeway Pharmacy']),
       pharmacyPhone: generatePhone().phone,

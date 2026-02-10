@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getPrescription, updatePrescription, deletePrescription } from '@/services/firestore';
 import { usePrescription } from '@/hooks/usePrescription';
+import { useDoctor } from '@/hooks/useDoctor';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +11,7 @@ import { ErrorMessage } from '@/components/shared/ErrorMessage';
 import { useToast } from '@/components/ui/use-toast';
 import { ArrowLeft, Edit, Trash2, Pill, Calendar, Phone, User, RefreshCw, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { formatDate, formatDateTime } from '@core/utils';
+import { PRESCRIPTION_STATUS } from '@/lib/constants';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,6 +21,8 @@ export default function PrescriptionDetailPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { prescription, loading, error, markTaken, unmarkTaken, medicationStatus } = usePrescription(id);
+  const { doctor: doctorDoc } = useDoctor(prescription?.doctorId);
+  const prescribedByName = prescription?.doctorSnapshot?.name ?? doctorDoc?.name;
   const [isRefillDialogOpen, setIsRefillDialogOpen] = useState(false);
   const [refillDate, setRefillDate] = useState('');
   const [isMarkDialogOpen, setIsMarkDialogOpen] = useState(false);
@@ -118,12 +122,6 @@ export default function PrescriptionDetailPage() {
     );
   }
 
-  const statusLabels = {
-    1: 'Active',
-    2: 'Completed',
-    3: 'Discontinued',
-  };
-
   const statusColors = {
     1: 'success',
     2: 'default',
@@ -147,7 +145,7 @@ export default function PrescriptionDetailPage() {
                 <p className="text-muted-foreground mt-1">Generic: {prescription.genericName}</p>
               )}
               <Badge variant={statusColors[prescription.status]} className="mt-2">
-                {statusLabels[prescription.status]}
+                {PRESCRIPTION_STATUS[prescription.status]}
               </Badge>
             </div>
             <div className="flex gap-2">
@@ -197,7 +195,7 @@ export default function PrescriptionDetailPage() {
             <CardContent className="space-y-3">
               <div>
                 <p className="text-sm text-muted-foreground">Prescribed By</p>
-                <p className="font-medium">{prescription.prescribedBy?.name || 'Not specified'}</p>
+                <p className="font-medium">{prescribedByName || 'Not specified'}</p>
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />

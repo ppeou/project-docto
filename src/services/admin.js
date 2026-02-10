@@ -11,6 +11,7 @@ import {
   setDoc,
   query,
   where,
+  arrayUnion,
 } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 
@@ -463,6 +464,7 @@ export const generateSeedItineraries = async (count = 10, patientIds = [], docto
       },
       ownerId: userIdForData,
       memberIds: [userIdForData], // Creator is automatically a member
+      memberAccess: { [userIdForData]: 2 }, // owner is collaborator
       created: {
         by: userIdForData,
         on: serverTimestamp(),
@@ -835,32 +837,54 @@ export const generateSeedItineraryShares = async (count = 10, itineraryIds = [],
 
   const shares = [];
   const BATCH_SIZE = 500;
-  
+  /** @type {Record<string, Record<string, number>>} itineraryId -> { [userId]: accessLevel } */
+  const batchItineraryUpdates = {};
+
   for (let i = 0; i < count; i += BATCH_SIZE) {
     const batch = writeBatch(db);
     const batchCount = Math.min(BATCH_SIZE, count - i);
-    
+    const batchUpdates = /** @type {Record<string, Record<string, number>>} */ ({});
+
     for (let j = 0; j < batchCount; j++) {
-      // Use provided userId or currently authenticated user for all seed data to comply with Firestore rules
       const userIdForData = targetUserId;
       const itineraryId = getRandomItem(itineraryIds);
       const sharedWith = getRandomItem(availableUserIds);
+      const accessLevel = getRandomItem([1, 2]); // 1=viewer, 2=collaborator
+      const isDeleted = Math.random() > 0.9;
 
       const shareData = {
         itineraryId,
         sharedBy: userIdForData,
         sharedWith,
-        accessLevel: getRandomItem([1, 2]), // 1=viewer, 2=collaborator
+        accessLevel,
         created: {
           by: userIdForData,
           on: serverTimestamp(),
         },
-        isDeleted: Math.random() > 0.9, // 10% deleted
+        isDeleted,
       };
 
       const docRef = doc(collection(db, 'itineraryShares'));
       batch.set(docRef, shareData);
       shares.push({ id: docRef.id, ...shareData });
+
+      if (!isDeleted) {
+        if (!batchUpdates[itineraryId]) batchUpdates[itineraryId] = {};
+        batchUpdates[itineraryId][sharedWith] = accessLevel;
+      }
+    }
+
+    for (const [itineraryId, userAccess] of Object.entries(batchUpdates)) {
+      const itineraryRef = doc(db, 'itineraries', itineraryId);
+      const userIds = Object.keys(userAccess);
+      const memberAccessUpdate = userIds.reduce((acc, uid) => {
+        acc[`memberAccess.${uid}`] = userAccess[uid];
+        return acc;
+      }, /** @type {Record<string, number>} */ ({}));
+      batch.update(itineraryRef, {
+        memberIds: arrayUnion(...userIds),
+        ...memberAccessUpdate,
+      });
     }
 
     await batch.commit();
@@ -902,6 +926,7 @@ const generateCompleteItinerary = async (patientId, patientData, doctorIds, doct
     },
     ownerId: userId,
     memberIds: [userId], // Creator is automatically a member
+    memberAccess: { [userId]: 2 }, // owner is collaborator
     created: {
       by: userId,
       on: serverTimestamp(),

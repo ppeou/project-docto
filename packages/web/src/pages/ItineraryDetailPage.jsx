@@ -20,14 +20,7 @@ import { ErrorMessage } from '@/components/shared/ErrorMessage';
 import { useToast } from '@/components/ui/use-toast';
 import { ArrowLeft, Plus, Calendar, Pill, FileText, Edit } from 'lucide-react';
 import { formatDate, formatDateTime } from '@core/utils';
-
-const NOTE_TYPE_LABELS = {
-  1: 'General Notes',
-  2: 'Test Results',
-  3: 'Treatment Plan',
-  4: 'Diagnosis',
-  5: 'Other',
-};
+import { NOTE_TYPE_LABELS, APPOINTMENT_STATUS, PRESCRIPTION_STATUS } from '@/lib/constants';
 
 export default function ItineraryDetailPage() {
   const { id } = useParams();
@@ -50,7 +43,8 @@ export default function ItineraryDetailPage() {
   const [saving, setSaving] = useState(false);
   const isOwner = itinerary && user && itinerary.ownerId === user.uid;
   const isMember = itinerary && user && Array.isArray(itinerary.memberIds) && itinerary.memberIds.includes(user.uid);
-  const canEdit = !!user && (isOwner || isMember);
+  const hasWriteAccess = isOwner || (isMember && (itinerary?.memberAccess == null || itinerary.memberAccess[user?.uid] === 2));
+  const canEdit = !!user && hasWriteAccess;
 
   // Helper function to convert date to YYYY-MM-DD format
   const dateToInputFormat = (date) => {
@@ -350,15 +344,10 @@ export default function ItineraryDetailPage() {
                           <div>
                             <CardTitle>{appointment.title}</CardTitle>
                             <CardDescription>
-                              {appointment.doctor?.name || 'No doctor specified'}
+                              {appointment.doctorSnapshot?.name || 'No doctor specified'}
                             </CardDescription>
                           </div>
-                          <Badge>
-                            {appointment.status === 1 && 'Scheduled'}
-                            {appointment.status === 2 && 'Completed'}
-                            {appointment.status === 3 && 'Cancelled'}
-                            {appointment.status === 4 && 'Rescheduled'}
-                          </Badge>
+                          <Badge>{APPOINTMENT_STATUS[appointment.status] ?? appointment.status}</Badge>
                         </div>
                       </CardHeader>
                       <CardContent>
@@ -408,14 +397,10 @@ export default function ItineraryDetailPage() {
                           <div>
                             <CardTitle>{prescription.medicationName}</CardTitle>
                             <CardDescription>
-                              {prescription.prescribedBy?.name || 'No doctor specified'}
+                              {prescription.doctorSnapshot?.name || 'No doctor specified'}
                             </CardDescription>
                           </div>
-                          <Badge>
-                            {prescription.status === 1 && 'Active'}
-                            {prescription.status === 2 && 'Completed'}
-                            {prescription.status === 3 && 'Discontinued'}
-                          </Badge>
+                          <Badge>{PRESCRIPTION_STATUS[prescription.status] ?? prescription.status}</Badge>
                         </div>
                       </CardHeader>
                       <CardContent>

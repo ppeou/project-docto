@@ -38,11 +38,16 @@ export const repositoryFactory = {
       const memberIds = ownerId
         ? Array.from(new Set([...existingMemberIds, ownerId]))
         : existingMemberIds;
+      const memberAccess = data.memberAccess && typeof data.memberAccess === 'object' ? { ...data.memberAccess } : {};
+      if (ownerId) {
+        memberAccess[ownerId] = 2; // owner is always collaborator
+      }
 
       return {
         ...data,
         ownerId: data.ownerId || ownerId,
         memberIds,
+        memberAccess,
       };
     },
   }),
@@ -113,8 +118,11 @@ export const repositoryFactory = {
     userIdField: 'userId',
     orderByField: 'created.on',
     orderDirection: 'desc',
+    transformCreate: (data) => {
+      const user = auth.currentUser;
+      return { ...data, userId: user?.uid };
+    },
     transformUpdate: (data) => {
-      // Remove fields that shouldn't be updated
       const { userId, created, isDeleted, ...updateData } = data;
       return updateData;
     },
@@ -127,8 +135,11 @@ export const repositoryFactory = {
     userIdField: 'userId',
     orderByField: 'created.on',
     orderDirection: 'desc',
+    transformCreate: (data) => {
+      const user = auth.currentUser;
+      return { ...data, userId: user?.uid };
+    },
     transformUpdate: (data) => {
-      // Remove fields that shouldn't be updated
       const { userId, created, isDeleted, ...updateData } = data;
       return updateData;
     },

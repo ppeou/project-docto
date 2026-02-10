@@ -6,17 +6,11 @@ import { useDoctors } from '@/hooks/useDoctors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, ArrowLeft } from 'lucide-react';
-
-const STATUS_OPTIONS = [
-  { value: 1, label: 'Scheduled' },
-  { value: 2, label: 'Completed' },
-  { value: 3, label: 'Cancelled' },
-  { value: 4, label: 'Rescheduled' },
-];
+import { FormPageLayout } from '@/components/layouts/FormPageLayout';
+import { APPOINTMENT_STATUS_OPTIONS } from '@/lib/constants';
+import { Loader2 } from 'lucide-react';
 
 export default function CreateAppointmentPage() {
   const navigate = useNavigate();
@@ -89,11 +83,10 @@ export default function CreateAppointmentPage() {
       const appointmentData = {
         itineraryId: formData.itineraryId,
         title: formData.title,
-        doctor: {
+        doctorId: formData.doctorId,
+        doctorSnapshot: {
           name: selectedDoctor.name,
           specialty: formData.doctorSpecialty || selectedDoctor.specialty || undefined,
-          phone: formData.doctorPhone || selectedDoctor.phones?.[0]?.phone || undefined,
-          email: formData.doctorEmail || selectedDoctor.emails?.[0]?.email || undefined,
         },
         clinicName: formData.clinicName || undefined,
         appointmentDate: appointmentDateTime.toISOString(),
@@ -129,24 +122,12 @@ export default function CreateAppointmentPage() {
   const backUrl = itineraryId ? `/itineraries/${itineraryId}` : '/itineraries';
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="container mx-auto max-w-2xl">
-        <Link to={backUrl}>
-          <Button variant="ghost" className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Button>
-        </Link>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Create Appointment</CardTitle>
-            <CardDescription>
-              {itinerary ? `For ${itinerary.patient?.name}'s itinerary` : 'Add a new appointment'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+    <FormPageLayout
+      backTo={backUrl}
+      title="Create Appointment"
+      description={itinerary ? `For ${itinerary.patient?.name}'s itinerary` : 'Add a new appointment'}
+    >
+      <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="title">Appointment Title *</Label>
                 <Input
@@ -285,7 +266,7 @@ export default function CreateAppointmentPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {STATUS_OPTIONS.map((option) => (
+                        {APPOINTMENT_STATUS_OPTIONS.map((option) => (
                           <SelectItem key={option.value} value={option.value.toString()}>
                             {option.label}
                           </SelectItem>
@@ -360,11 +341,8 @@ export default function CreateAppointmentPage() {
                   </Button>
                 </Link>
               </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+      </form>
+    </FormPageLayout>
   );
 }
 

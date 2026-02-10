@@ -50,7 +50,8 @@ export default function ItineraryDetailPage() {
   const [saving, setSaving] = useState(false);
   const isOwner = itinerary && user && itinerary.ownerId === user.uid;
   const isMember = itinerary && user && Array.isArray(itinerary.memberIds) && itinerary.memberIds.includes(user.uid);
-  const canEdit = !!user && (isOwner || isMember);
+  const hasWriteAccess = isOwner || (isMember && (itinerary?.memberAccess == null || itinerary.memberAccess[user?.uid] === 2));
+  const canEdit = !!user && hasWriteAccess;
 
   // Helper function to convert date to YYYY-MM-DD format
   const dateToInputFormat = (date) => {

@@ -24,6 +24,10 @@
       "type": "string",
       "description": "Reference to parent itinerary"
     },
+    "doctorId": {
+      "type": "string",
+      "description": "Reference to doctor (derived from appointment, for indexing)"
+    },
     "title": {
       "type": "string",
       "maxLength": 200,

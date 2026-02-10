@@ -8,14 +8,7 @@ import { ErrorMessage } from '@/components/shared/ErrorMessage';
 import { ArrowLeft, FileText, Image, File, Download, ExternalLink } from 'lucide-react';
 import { formatDateTime } from '@core/utils';
 import { formatFileSize } from '@/services/storage';
-
-const NOTE_TYPE_LABELS = {
-  1: 'General Notes',
-  2: 'Test Results',
-  3: 'Treatment Plan',
-  4: 'Diagnosis',
-  5: 'Other',
-};
+import { NOTE_TYPE_LABELS } from '@/lib/constants';
 
 export default function DoctorNoteDetailPage() {
   const { id } = useParams();

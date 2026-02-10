@@ -41,6 +41,26 @@ service cloud.firestore {
              request.resource.data.created.by == request.auth.uid;
     }
 
+    // Access level: 1=viewer (read-only), 2=collaborator (read-write). Owner always has write.
+    function hasWriteAccessToItinerary(itineraryId) {
+      let itinerary = get(/databases/$(database)/documents/itineraries/$(itineraryId));
+      if (itinerary.data.created.by == request.auth.uid) {
+        return true;
+      }
+      if (itinerary.data.memberAccess != null) {
+        return itinerary.data.memberAccess[request.auth.uid] == 2;
+      }
+      // Backward compatibility: no memberAccess => treat as collaborator
+      return itinerary.data.memberIds != null && 
+             request.auth.uid in itinerary.data.memberIds;
+    }
+
+    function hasItineraryAccess(itineraryId) {
+      return itineraryId != null &&
+             exists(/databases/$(database)/documents/itineraries/$(itineraryId)) &&
+             isItineraryMemberDoc(get(/databases/$(database)/documents/itineraries/$(itineraryId)));
+    }
+
     function isNotDeleted() {
       return resource.data.isDeleted == false;
     }
@@ -142,10 +162,10 @@ service cloud.firestore {
                        (isAdmin() ||
                         (willBeCreator() && willBeItineraryMember()));
       
-      // Allow update if user is a member and doesn't change soft-delete status
-      // Ownership (created.by) must remain the same
+      // Allow update only if user has write access (owner or collaborator)
       allow update: if isAuthenticated() && 
                        isItineraryMember() &&
+                       hasWriteAccessToItinerary(itineraryId) &&
                        request.resource.data.created.by == resource.data.created.by &&
                        request.resource.data.isDeleted == resource.data.isDeleted;
       
@@ -155,21 +175,19 @@ service cloud.firestore {
 
     // Appointments collection
     match /appointments/{appointmentId} {
-      // Helper function to check if user is a member of the parent itinerary
-      function itineraryMemberForAppointment() {
-        return resource.data.itineraryId != null &&
-               exists(/databases/$(database)/documents/itineraries/$(resource.data.itineraryId)) &&
-               isItineraryMemberDoc(get(/databases/$(database)/documents/itineraries/$(resource.data.itineraryId)));
+      function hasItineraryAccessForAppointment() {
+        return hasItineraryAccess(resource.data.itineraryId);
+      }
+      function hasWriteAccessForAppointment() {
+        return hasItineraryAccessForAppointment() &&
+               hasWriteAccessToItinerary(resource.data.itineraryId);
       }
       
-      // Allow read if user is a member of the parent itinerary or is admin
-      // For queries, Firestore checks each document individually
       allow read: if isAuthenticated() && 
                      (!resource.exists || 
                       isAdmin() ||
-                      (itineraryMemberForAppointment() && isNotDeleted()));
+                      (hasItineraryAccessForAppointment() && isNotDeleted()));
       
-      // Allow create if user is a member of the target itinerary and required fields are present, or if admin creates for any user
       allow create: if isAuthenticated() && 
                        request.resource.data.title is string &&
                        request.resource.data.title.size() > 0 &&
@@ -177,90 +195,82 @@ service cloud.firestore {
                        willNotBeDeleted() &&
                        (isAdmin() ||
                         (request.resource.data.itineraryId != null &&
-                         exists(/databases/$(database)/documents/itineraries/$(request.resource.data.itineraryId)) &&
-                         isItineraryMemberDoc(get(/databases/$(database)/documents/itineraries/$(request.resource.data.itineraryId)))));
+                         hasItineraryAccess(request.resource.data.itineraryId) &&
+                         hasWriteAccessToItinerary(request.resource.data.itineraryId)));
       
-      // Allow update if user is a member of the parent itinerary and doesn't change ownership or soft-delete state
       allow update: if isAuthenticated() && 
-                       itineraryMemberForAppointment() &&
+                       hasWriteAccessForAppointment() &&
                        request.resource.data.created.by == resource.data.created.by &&
                        request.resource.data.isDeleted == resource.data.isDeleted;
       
-      // Allow delete (soft delete) if user is a member of the parent itinerary or is admin
-      allow delete: if isAuthenticated() && (itineraryMemberForAppointment() || isAdmin());
+      allow delete: if isAuthenticated() && 
+                       (hasWriteAccessForAppointment() || isAdmin());
     }
 
     // Prescriptions collection
     match /prescriptions/{prescriptionId} {
-      // Helper function to check if user is a member of the parent itinerary
-      function itineraryMemberForPrescription() {
-        return resource.data.itineraryId != null &&
-               exists(/databases/$(database)/documents/itineraries/$(resource.data.itineraryId)) &&
-               isItineraryMemberDoc(get(/databases/$(database)/documents/itineraries/$(resource.data.itineraryId)));
+      function hasItineraryAccessForPrescription() {
+        return hasItineraryAccess(resource.data.itineraryId);
+      }
+      function hasWriteAccessForPrescription() {
+        return hasItineraryAccessForPrescription() &&
+               hasWriteAccessToItinerary(resource.data.itineraryId);
       }
       
-      // Allow read if user is a member of the parent itinerary or is admin
-      // For queries, Firestore checks each document individually
       allow read: if isAuthenticated() && 
                      (!resource.exists || 
                       isAdmin() ||
-                      (itineraryMemberForPrescription() && isNotDeleted()));
+                      (hasItineraryAccessForPrescription() && isNotDeleted()));
       
-      // Allow create if user is a member of the target itinerary and required fields are present, or if admin creates for any user
       allow create: if isAuthenticated() && 
                        request.resource.data.medicationName is string &&
                        request.resource.data.medicationName.size() > 0 &&
                        willNotBeDeleted() &&
                        (isAdmin() ||
                         (request.resource.data.itineraryId != null &&
-                         exists(/databases/$(database)/documents/itineraries/$(request.resource.data.itineraryId)) &&
-                         isItineraryMemberDoc(get(/databases/$(database)/documents/itineraries/$(request.resource.data.itineraryId)))));
+                         hasItineraryAccess(request.resource.data.itineraryId) &&
+                         hasWriteAccessToItinerary(request.resource.data.itineraryId)));
       
-      // Allow update if user is a member of the parent itinerary and doesn't change ownership or soft-delete state
       allow update: if isAuthenticated() && 
-                       itineraryMemberForPrescription() &&
+                       hasWriteAccessForPrescription() &&
                        request.resource.data.created.by == resource.data.created.by &&
                        request.resource.data.isDeleted == resource.data.isDeleted;
       
-      // Allow delete (soft delete) if user is a member of the parent itinerary or is admin
-      allow delete: if isAuthenticated() && (itineraryMemberForPrescription() || isAdmin());
+      allow delete: if isAuthenticated() && 
+                       (hasWriteAccessForPrescription() || isAdmin());
     }
 
     // Doctor Notes collection
     match /doctorNotes/{noteId} {
-      // Helper function to check if user is a member of the parent itinerary
-      // Doctor notes always have an itineraryId according to schema
-      function itineraryMemberForNote() {
-        return resource.data.itineraryId != null &&
-               exists(/databases/$(database)/documents/itineraries/$(resource.data.itineraryId)) &&
-               isItineraryMemberDoc(get(/databases/$(database)/documents/itineraries/$(resource.data.itineraryId)));
+      function hasItineraryAccessForNote() {
+        return hasItineraryAccess(resource.data.itineraryId);
+      }
+      function hasWriteAccessForNote() {
+        return hasItineraryAccessForNote() &&
+               hasWriteAccessToItinerary(resource.data.itineraryId);
       }
       
-      // Allow read if user is a member of the parent itinerary or is admin
-      // For queries, Firestore checks each document individually
       allow read: if isAuthenticated() && 
                      (!resource.exists || 
                       isAdmin() ||
-                      (itineraryMemberForNote() && isNotDeleted()));
+                      (hasItineraryAccessForNote() && isNotDeleted()));
       
-      // Allow create if user is a member of the target itinerary and required fields are present, or if admin creates for any user
       allow create: if isAuthenticated() && 
                        request.resource.data.content is string &&
                        request.resource.data.content.size() > 0 &&
                        willNotBeDeleted() &&
                        (isAdmin() ||
                         (request.resource.data.itineraryId != null &&
-                         exists(/databases/$(database)/documents/itineraries/$(request.resource.data.itineraryId)) &&
-                         isItineraryMemberDoc(get(/databases/$(database)/documents/itineraries/$(request.resource.data.itineraryId)))));
+                         hasItineraryAccess(request.resource.data.itineraryId) &&
+                         hasWriteAccessToItinerary(request.resource.data.itineraryId)));
       
-      // Allow update if user is a member of the parent itinerary and doesn't change ownership or soft-delete state
       allow update: if isAuthenticated() && 
-                       itineraryMemberForNote() &&
+                       hasWriteAccessForNote() &&
                        request.resource.data.created.by == resource.data.created.by &&
                        request.resource.data.isDeleted == resource.data.isDeleted;
       
-      // Allow delete (soft delete) if user is a member of the parent itinerary or is admin
-      allow delete: if isAuthenticated() && (itineraryMemberForNote() || isAdmin());
+      allow delete: if isAuthenticated() && 
+                       (hasWriteAccessForNote() || isAdmin());
     }
 
     // Invitations collection

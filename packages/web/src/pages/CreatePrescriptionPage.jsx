@@ -8,16 +8,10 @@ import { useFrequencyOptions } from '@/hooks/useFrequencyOptions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, ArrowLeft } from 'lucide-react';
-
-const STATUS_OPTIONS = [
-  { value: 1, label: 'Active' },
-  { value: 2, label: 'Completed' },
-  { value: 3, label: 'Discontinued' },
-];
+import { FormPageLayout } from '@/components/layouts/FormPageLayout';
+import { Loader2 } from 'lucide-react';
 
 export default function CreatePrescriptionPage() {
   const navigate = useNavigate();
@@ -130,7 +124,8 @@ export default function CreatePrescriptionPage() {
         trackingStartDate: formData.trackingStartDate || undefined,
         trackingEndDate: formData.trackingEndDate || undefined,
         trackingEnabled: formData.trackingEnabled,
-        prescribedBy: {
+        doctorId: formData.doctorId,
+        doctorSnapshot: {
           name: selectedDoctor.name,
           specialty: selectedDoctor.specialty || undefined,
         },
@@ -174,24 +169,12 @@ export default function CreatePrescriptionPage() {
   const backUrl = itineraryId ? `/itineraries/${itineraryId}` : '/itineraries';
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="container mx-auto max-w-2xl">
-        <Link to={backUrl}>
-          <Button variant="ghost" className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Button>
-        </Link>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Create Prescription</CardTitle>
-            <CardDescription>
-              {itinerary ? `For ${itinerary.patient?.name}'s itinerary` : 'Add a new prescription'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+    <FormPageLayout
+      backTo={backUrl}
+      title="Create Prescription"
+      description={itinerary ? `For ${itinerary.patient?.name}'s itinerary` : 'Add a new prescription'}
+    >
+      <form onSubmit={handleSubmit} className="space-y-6">
               {/* Patient Selection */}
               <div className="space-y-4 border-b pb-4">
                 <h3 className="font-semibold">Patient Information</h3>
@@ -541,11 +524,8 @@ export default function CreatePrescriptionPage() {
                   </Button>
                 </Link>
               </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+      </form>
+    </FormPageLayout>
   );
 }
 
